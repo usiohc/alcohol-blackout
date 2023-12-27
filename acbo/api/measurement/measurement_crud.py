@@ -1,6 +1,7 @@
-from api.measurement.measurement_schema import MeasurementCreate
-from models import Measurement
 from sqlalchemy.orm import Session
+
+from api.measurement import measurement_schema
+from models import Measurement
 
 
 def get_measurement_list(db: Session):
@@ -13,14 +14,14 @@ def get_measurement(db: Session, measurement_id: int):
     return measurement_detail
 
 
-def create_measurement(db: Session, measurement_create: MeasurementCreate):
-    db_measurement = Measurement(unit=measurement_create.unit,
-                                 amount=measurement_create.amount)
+def create_measurement(db: Session, _measurement_create: measurement_schema.MeasurementCreate):
+    db_measurement = Measurement(unit=_measurement_create.unit,
+                                 amount=_measurement_create.amount)
     db.add(db_measurement)
     db.commit()
     return db_measurement
 
 
-def get_exist_measurement(db: Session, measurement_create: MeasurementCreate):
-    return db.query(Measurement).filter(Measurement.unit == measurement_create.unit,
-                                        Measurement.amount == measurement_create.amount).first()
+def get_exist_measurement(db: Session, _measurement: measurement_schema.MeasurementCreate):
+    return db.query(Measurement).filter(Measurement.unit == _measurement.unit,
+                                        Measurement.amount == _measurement.amount).first()

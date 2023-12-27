@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from api.spirit import spirit_router
 from api.measurement import measurement_router
-
+from api.spirit import spirit_router
 
 app = FastAPI()
 

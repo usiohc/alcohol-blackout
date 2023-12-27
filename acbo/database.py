@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, MetaData
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 SQLALCHEMY_DATABASE_URL: str = "sqlite:///./acbo.db"
 

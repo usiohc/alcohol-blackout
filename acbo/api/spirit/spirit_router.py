@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
 
-from database import get_db
+from api.measurement import measurement_router
 from api.spirit import spirit_schema, spirit_crud
-from api.measurement import measurement_schema, measurement_crud
+from database import get_db
 
 router = APIRouter(
     prefix="/api/spirit",
@@ -26,8 +26,9 @@ def spirit_detail(spirit_id: int, db: Session = Depends(get_db)):
 @router.post("/create", status_code=status.HTTP_204_NO_CONTENT)
 def spirit_create(_spirit_create: spirit_schema.SpiritCreate,
                   db: Session = Depends(get_db)):
-    # measurement:
 
-    if measurement := measurement_crud.get_exist_measurement(db=db, measurement=_spirit_create.measurement) is None:
-        _spirit_create.measurement = measurement_crud.create_measurement(db=db, measurement_create=_spirit_create.measurement)
-    spirit_crud.create_spirit(db=db, spirit=_spirit_create, measurement_id=_spirit_create.measurement.id)
+    _spirit_create.measurement = measurement_router.measurement_create(_measurement=_spirit_create.measurement, db=db)
+
+    if spirit_crud.get_exist_spirit(db=db, _spirit=_spirit_create):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 Spirit입니다.")
+    spirit_crud.create_spirit(db=db, _spirit=_spirit_create)

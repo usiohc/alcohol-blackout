@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from starlette import status
 
-from database import get_db
-from models import Measurement
 from api.measurement import measurement_schema, measurement_crud
+from database import get_db
 
 router = APIRouter(
     prefix="/api/measurement",
@@ -23,10 +21,12 @@ def measurement_detail(measurement_id: int, db: Session = Depends(get_db)):
     return measurement
 
 
-@router.post("/create", status_code=status.HTTP_204_NO_CONTENT)
-def measurement_create(_measurement_create: measurement_schema.MeasurementCreate,
+# @router.post("/create", status_code=status.HTTP_204_NO_CONTENT)
+# def measurement_create(_measurement_create: spirit_schema.SpiritCreate.measurement,
+def measurement_create(_measurement: measurement_schema.MeasurementCreate,
                        db: Session = Depends(get_db)):
-    if measurement := measurement_crud.get_exist_measurement(db=db, measurement_create=_measurement_create):
-        return measurement
-    else:
-        return measurement_crud.create_measurement(db=db, measurement_create=_measurement_create)
+
+    measurement = measurement_crud.get_exist_measurement(db=db, _measurement=_measurement)
+    if not measurement:
+        measurement = measurement_crud.create_measurement(db=db, _measurement_create=_measurement)
+    return measurement
