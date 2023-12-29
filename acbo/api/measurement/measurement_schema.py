@@ -10,6 +10,11 @@ class Measurement(BaseModel):
     usage_count: int = 0
 
 
+class MeasurementList(BaseModel):
+    total: int
+    measurements: list[Measurement] = []
+
+
 class MeasurementCreate(BaseModel):
     unit: Unit
     amount: int

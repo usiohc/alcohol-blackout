@@ -11,6 +11,11 @@ class Spirit(BaseModel):
     usage_count: int = 0
 
 
+class SpiritList(BaseModel):
+    total: int
+    spirits: list[Spirit] = []
+
+
 class SpiritCreate(BaseModel):
     type: SpiritType
     # measurement_id: int

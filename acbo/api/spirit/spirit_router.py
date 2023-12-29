@@ -7,28 +7,38 @@ from api.spirit import spirit_schema, spirit_crud
 from database import get_db
 
 router = APIRouter(
-    prefix="/api/spirit",
+    prefix="/api/spirits",
 )
 
 
-@router.get("/list", response_model=list[spirit_schema.Spirit])
+@router.get("", response_model=spirit_schema.SpiritList)
 def spirit_list(db: Session = Depends(get_db)):
-    _spirit_list = spirit_crud.get_spirit_list(db)
-    return _spirit_list
+    total, _spirit_list = spirit_crud.get_spirit_list(db)
+    return {'total': total, 'spirits': _spirit_list}
 
 
-@router.get("/detail/{spirit_id}")
+@router.get("/{spirit_id}", response_model=spirit_schema.Spirit)
 def spirit_detail(spirit_id: int, db: Session = Depends(get_db)):
     spirit = spirit_crud.get_spirit(db, spirit_id=spirit_id)
-    return spirit
+    if not spirit:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Spirit입니다.")
+    else:
+        return spirit
 
 
-@router.post("/create", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("", status_code=status.HTTP_201_CREATED)
 def spirit_create(_spirit_create: spirit_schema.SpiritCreate,
                   db: Session = Depends(get_db)):
-
-    _spirit_create.measurement = measurement_router.measurement_create(_measurement=_spirit_create.measurement, db=db)
-
-    if spirit_crud.get_exist_spirit(db=db, _spirit=_spirit_create):
+    _spirit_create.measurement = measurement_router.measurement_create(_measurement=_spirit_create.measurement,
+                                                                       is_post=False,
+                                                                       db=db)
+    if spirit_crud.get_exist_spirit(db=db, spirit=_spirit_create):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 Spirit입니다.")
-    spirit_crud.create_spirit(db=db, _spirit=_spirit_create)
+    spirit_crud.create_spirit(db=db, spirit=_spirit_create)
+    return _spirit_create
+
+
+@router.delete("/{spirit_id}", status_code=status.HTTP_204_NO_CONTENT)
+def spirit_delete(spirit_id: int, db: Session = Depends(get_db)):
+    if not spirit_crud.delete_spirit(db=db, spirit_id=spirit_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Spirit입니다.")
