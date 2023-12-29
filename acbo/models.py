@@ -67,23 +67,28 @@ class Material(Base):
     measurement = relationship("Measurement")
 
 
-class Cocktail(Base):
-    __tablename__ = 'cocktail'
+class CocktailSpirit(Base):
+    __tablename__ = 'cocktail_spirit'
 
     id = Column(Integer, primary_key=True)
+    cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
     spirit_id = Column(Integer, ForeignKey('spirit.id'))
-    cocktail_name = Column(String, nullable=False)
-    usage_count = Column(Integer, default=0)
-
-    spirit = relationship("Spirit")
 
 
-class CocktailIngredient(Base):
-    __tablename__ = 'cocktail_ingredient'
+class CocktailMaterial(Base):
+    __tablename__ = 'cocktail_material'
 
     id = Column(Integer, primary_key=True)
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
     material_id = Column(Integer, ForeignKey('material.id'))
 
-    cocktail = relationship("Cocktail")
-    material = relationship("Material")
+
+class Cocktail(Base):
+    __tablename__ = 'cocktail'
+
+    id = Column(Integer, primary_key=True)
+    cocktail_name = Column(String, nullable=False)
+    usage_count = Column(Integer, default=0)
+
+    spirits = relationship("CocktailSpirit", backref="cocktail")
+    materials = relationship("CocktailMaterial", backref="cocktail")
