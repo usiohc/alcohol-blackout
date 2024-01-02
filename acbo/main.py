@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
+from api.cocktail import cocktail_router
 from api.spirit import spirit_router
 from api.material import material_router
 
@@ -22,3 +23,4 @@ app.add_middleware(
 
 app.include_router(spirit_router.router)
 app.include_router(material_router.router)
+app.include_router(cocktail_router.router)

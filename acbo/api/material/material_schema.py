@@ -24,6 +24,12 @@ class MaterialCreate(BaseModel):
     amount: int
     cocktail_id: int
 
+    @field_validator('type')
+    def validate_material_type(cls, v):
+        if v.name not in MaterialType.__members__:
+            raise ValueError('존재하지 않는 재료 입니다.')
+        return v
+
     @field_validator('unit')
     def unit_check(cls, v):
         # Web에서 Dropdown으로 Unit을 선택하면 상관 없음
@@ -32,17 +38,12 @@ class MaterialCreate(BaseModel):
         return v
 
     @field_validator('amount')
-    def amount_check(cls, v):
+    def amount_check(cls, v, values):
+        print(v, values)
         if type(v) is not int:
             raise ValueError('숫자만 입력해주세요.')
-        elif v <= 0:
+        elif v <= 0 and values.data['unit'].name != 'Full_up':
             raise ValueError('0 이하의 숫자는 허용되지 않습니다.')
-        return v
-
-    @field_validator('type')
-    def validate_material_type(cls, v):
-        if v.name not in MaterialType.__members__:
-            raise ValueError('존재하지 않는 재료 입니다.')
         return v
 
 

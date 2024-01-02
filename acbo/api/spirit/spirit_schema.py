@@ -22,6 +22,11 @@ class SpiritCreate(BaseModel):
     amount: int
     cocktail_id: int
 
+    @field_validator('type')
+    def validate_spirit_type(cls, v):
+        if v.name not in SpiritType.__members__:
+            raise ValueError('존재하지 않는 기주 입니다.')
+        return v
 
     @field_validator('unit')
     def unit_check(cls, v):
@@ -31,18 +36,11 @@ class SpiritCreate(BaseModel):
         return v
 
     @field_validator('amount')
-    def amount_check(cls, v):
+    def amount_check(cls, v, values):
         if type(v) is not int:
             raise ValueError('숫자만 입력해주세요.')
-        elif v <= 0:
+        elif v <= 0 and values.data['unit'].name != 'Full_up':
             raise ValueError('0 이하의 숫자는 허용되지 않습니다.')
-        return v
-
-
-    @field_validator('type')
-    def validate_spirit_type(cls, v):
-        if v.name not in SpiritType.__members__:
-            raise ValueError('존재하지 않는 기주 입니다.')
         return v
 
 

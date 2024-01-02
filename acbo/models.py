@@ -12,7 +12,7 @@ class Unit(myEnum):
     dash = 'dash'
     drop = 'drop'
     pinch = 'pinch'
-    Full_up = 'Full_up' # Full_up -> amount = 1
+    Full_up = 'Full_up' # Full_up -> amount = 0
     piece = 'piece'
 
 
@@ -63,7 +63,7 @@ class Cocktail(Base):
     __tablename__ = 'cocktail'
 
     id = Column(Integer, primary_key=True, )
-    cocktail_name = Column(String, nullable=False)
+    name = Column(String, nullable=False)
     usage_count = Column(Integer, default=0)
 
     spirits = relationship("Spirit", cascade="all, delete", backref="cocktail")
