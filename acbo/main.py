@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from api.measurement import measurement_router
 from api.spirit import spirit_router
+from api.material import material_router
 
 app = FastAPI()
 
@@ -21,4 +21,4 @@ app.add_middleware(
 
 
 app.include_router(spirit_router.router)
-app.include_router(measurement_router.router)
+app.include_router(material_router.router)

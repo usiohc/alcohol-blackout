@@ -1,27 +1,28 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 
-from models import SpiritType, Unit
+from models import MaterialType, Unit
 
 
-class Spirit(BaseModel):
+class Material(BaseModel):
     id: int
-    type: SpiritType
+    type: MaterialType
+    name: str = Field(..., nullable=False, max_length=20)
     unit: Unit
     amount: int
     cocktail_id: int
 
 
-class SpiritList(BaseModel):
+class MaterialList(BaseModel):
     total: int
-    spirits: list[Spirit] = []
+    materials: list[Material] = []
 
 
-class SpiritCreate(BaseModel):
-    type: SpiritType
+class MaterialCreate(BaseModel):
+    type: MaterialType
+    name: str = Field(..., nullable=False, max_length=20)
     unit: Unit
     amount: int
     cocktail_id: int
-
 
     @field_validator('unit')
     def unit_check(cls, v):
@@ -38,13 +39,12 @@ class SpiritCreate(BaseModel):
             raise ValueError('0 이하의 숫자는 허용되지 않습니다.')
         return v
 
-
     @field_validator('type')
-    def validate_spirit_type(cls, v):
-        if v.name not in SpiritType.__members__:
-            raise ValueError('존재하지 않는 기주 입니다.')
+    def validate_material_type(cls, v):
+        if v.name not in MaterialType.__members__:
+            raise ValueError('존재하지 않는 재료 입니다.')
         return v
 
 
-class SpiritUpdate(SpiritCreate):
+class MaterialUpdate(MaterialCreate):
     pass
