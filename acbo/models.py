@@ -44,8 +44,7 @@ class Spirit(Base):
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
-
-    cocktail = relationship("Cocktail", backref="spirits")
+    # cocktail = relationship("Cocktail", backref="spirits")
 
 
 class Material(Base):
@@ -56,14 +55,16 @@ class Material(Base):
     name = Column(String, nullable=False)
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
-
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'), nullable=True)
-    cocktail = relationship("Cocktail", backref="materials")
+    # cocktail = relationship("Cocktail", backref="materials")
 
 
 class Cocktail(Base):
     __tablename__ = 'cocktail'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, )
     cocktail_name = Column(String, nullable=False)
     usage_count = Column(Integer, default=0)
+
+    spirits = relationship("Spirit", cascade="all, delete", backref="cocktail")
+    materials = relationship("Material", cascade="all, delete", backref="cocktail")
