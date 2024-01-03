@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from starlette import status
 
 from api.material import material_crud, material_schema
 from database import get_db
+from models import SpiritType
 
 router = APIRouter(
-    prefix="/api/material",
+    prefix="/api/materials",
 )
 
 
@@ -22,6 +23,17 @@ def material_detail(material_id: int, db: Session = Depends(get_db)):
     if not material:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Material입니다.")
     return material
+
+
+@router.get("/", response_model=material_schema.MaterialBySpiritType)
+def material_name_by_spirit_type(spirit_type: list = Query([]), db: Session = Depends(get_db)):
+    if not all(_type in SpiritType.__members__ for _type in spirit_type):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="올바르지 않은 SpiritUnit입니다.")
+
+    total, materials = material_crud.get_material_name_by_spirit_type(spirit_type=spirit_type, db=db)
+    if not materials:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material을 찾을 수 없습니다.")
+    return {"total": total, "materials": materials}
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

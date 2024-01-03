@@ -12,6 +12,16 @@ class Material(BaseModel):
     cocktail_id: int
 
 
+class MaterialTypeName(BaseModel):
+    type: MaterialType
+    name: str = Field(..., nullable=False, max_length=20)
+
+
+class MaterialBySpiritType(BaseModel):
+    total: int
+    materials: list[MaterialTypeName] = []
+
+
 class MaterialList(BaseModel):
     total: int
     materials: list[Material] = []
@@ -39,7 +49,6 @@ class MaterialCreate(BaseModel):
 
     @field_validator('amount')
     def amount_check(cls, v, values):
-        print(v, values)
         if type(v) is not int:
             raise ValueError('숫자만 입력해주세요.')
         elif v <= 0 and values.data['unit'].name != 'Full_up':
