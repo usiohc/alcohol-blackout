@@ -25,8 +25,9 @@ def material_detail(material_id: int, db: Session = Depends(get_db)):
     return material
 
 
-@router.get("/", response_model=material_schema.MaterialBySpiritType)
-def material_name_by_spirit_type(spirit_type: list = Query([]), db: Session = Depends(get_db)):
+@router.get("/", response_model=material_schema.MaterialBySpirit)
+def material_name_by_spirit_type(q: str = Query("", convert_underscores=False), db: Session = Depends(get_db)):
+    spirit_type = q.split(",")
     if not all(_type in SpiritType.__members__ for _type in spirit_type):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="올바르지 않은 SpiritUnit입니다.")
 

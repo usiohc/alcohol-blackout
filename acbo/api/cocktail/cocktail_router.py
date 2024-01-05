@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Union
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from starlette import status
 
@@ -16,12 +18,27 @@ def cocktail_list(db: Session = Depends(get_db)):
     return {'total': total, 'cocktails': _cocktail_list}
 
 
-@router.get("/{cocktail_id}", response_model=cocktail_schema.Cocktail)
+@router.get("/{cocktail_id}", response_model=cocktail_schema.CocktailDetail)
 def cocktail_detail(cocktail_id: int, db: Session = Depends(get_db)):
     cocktail = cocktail_crud.get_cocktail(db, cocktail_id=cocktail_id)
     if not cocktail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
     return cocktail
+
+
+@router.get("/", response_model=cocktail_schema.CocktailBySpiritMaterial)
+def cocktail_list_by_spirit_material(q_spirits: str = Query("", convert_underscores=False),
+                                     q_materials: str | None = Query(None, convert_underscores=False),
+                                     db: Session = Depends(get_db)):
+    # q = q.split(",")
+    q_spirits = list(map(int, q_spirits.split(",")))
+    if q_materials:
+        q_materials = q_materials.replace(" ", "_")
+        q_materials = list(map(str, q_materials.split(","))) # -> ["~:~", "~:~"]
+        q_materials = list(map(lambda x: x.split(":"), q_materials)) # -> [["~", "~"], ["~", "~"]]
+
+    total, cocktails = cocktail_crud.get_cocktail_list_by_spirit_material(q_spirits=q_spirits, q_materials=q_materials, db=db)
+    return {"total": total, "cocktails": cocktails}
 
 
 @router.get("/{cocktail_id}/spirits", response_model=cocktail_schema.CocktailSpiritList)

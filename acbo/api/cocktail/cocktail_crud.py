@@ -1,7 +1,8 @@
+from sqlalchemy import and_, union, tuple_
 from sqlalchemy.orm import Session
 
 from api.cocktail import cocktail_schema
-from models import Cocktail
+from models import Cocktail, Material
 
 
 def get_cocktail_list(db: Session):
@@ -48,3 +49,24 @@ def update_cocktail(db: Session,
     db_cocktail.name = cocktail_update.name
     db.add(db_cocktail)
     db.commit()
+
+
+def get_cocktail_list_by_spirit_material(q_spirits: list,
+                                         q_materials: list | None,
+                                         db: Session):
+    # materials의 and 연산
+    q_spirits = set(q_spirits)
+    if q_materials:
+        for material_type, material_name in q_materials:
+            subquery = db.query(Material.cocktail_id)\
+                .filter(and_(Material.type == material_type, Material.name == material_name))\
+                .group_by(Material.cocktail_id).all()
+            q_spirits = q_spirits & set(result[0] for result in subquery) # subquery = [(1,), ...]
+
+
+    query = db.query(Cocktail).filter(Cocktail.id.in_(q_spirits))
+    total, cocktails = query.count(), query.all()
+    for cocktail in cocktails:
+        cocktail.name = cocktail.name.replace("_", " ")
+
+    return total, cocktails

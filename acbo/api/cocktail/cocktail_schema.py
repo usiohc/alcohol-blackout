@@ -8,8 +8,12 @@ class Cocktail(BaseModel):
     id: int
     name: str
     usage_count: int
+
+
+class CocktailDetail(Cocktail):
     spirits: list[Spirit] = []
     materials: list[Material] = []
+
 
 
 class CocktailSpiritList(BaseModel):
@@ -24,7 +28,7 @@ class CocktailMaterialList(BaseModel):
 
 class CocktailList(BaseModel):
     total: int
-    cocktails: list[Cocktail] = []
+    cocktails: list[CocktailDetail] = []
 
 
 class CocktailCreate(BaseModel):
@@ -39,4 +43,10 @@ class CocktailCreate(BaseModel):
 
 
 class CocktailUpdate(CocktailCreate):
+    pass
+
+
+class CocktailBySpiritMaterial(BaseModel):
+    total: int
+    cocktails: list[Cocktail] = []
     pass

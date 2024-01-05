@@ -18,7 +18,8 @@ def get_spirit(db: Session, spirit_id: int):
 def get_exist_spirit(db: Session, spirit: spirit_schema.SpiritCreate | spirit_schema.SpiritUpdate):
     return db.query(Spirit).filter(Spirit.type == spirit.type,
                                    Spirit.unit == spirit.unit,
-                                   Spirit.amount == spirit.amount).first()
+                                   Spirit.amount == spirit.amount,
+                                   Spirit.cocktail_id == spirit.cocktail_id).first()
 
 
 def create_spirit(db: Session, spirit: spirit_schema.SpiritCreate):

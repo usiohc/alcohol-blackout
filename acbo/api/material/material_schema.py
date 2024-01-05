@@ -17,7 +17,7 @@ class MaterialTypeName(BaseModel):
     name: str = Field(..., nullable=False, max_length=20)
 
 
-class MaterialBySpiritType(BaseModel):
+class MaterialBySpirit(BaseModel):
     total: int
     materials: list[MaterialTypeName] = []
 

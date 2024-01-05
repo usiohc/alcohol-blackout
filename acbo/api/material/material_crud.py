@@ -20,7 +20,8 @@ def get_exist_material(db: Session, material: material_schema.MaterialCreate):
     return db.query(Material).filter(Material.type == material.type,
                                      Material.name == material.name,
                                      Material.unit == material.unit,
-                                     Material.amount == material.amount).first()
+                                     Material.amount == material.amount,
+                                     Material.cocktail_id == material.cocktail_id).first()
 
 
 def create_material(db: Session, material: material_schema.MaterialCreate):
