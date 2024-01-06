@@ -12,15 +12,6 @@ class Material(BaseModel):
     cocktail_id: int
 
 
-class MaterialBySpirit(BaseModel):
-    class MaterialItem(BaseModel):
-        type: MaterialType
-        name: str
-
-    total: int
-    items: list[MaterialItem] = []
-
-
 class MaterialList(BaseModel):
     total: int
     materials: list[Material] = []
@@ -57,3 +48,12 @@ class MaterialCreate(BaseModel):
 
 class MaterialUpdate(MaterialCreate):
     pass
+
+
+class MaterialBySpirit(BaseModel):
+    class MaterialItem(BaseModel):
+        type: MaterialType
+        name: str
+
+    total: int
+    items: list[MaterialItem] = []
