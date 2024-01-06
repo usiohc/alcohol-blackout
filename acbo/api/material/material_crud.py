@@ -51,22 +51,26 @@ def update_material(db: Session,
     db.commit()
 
 
-def get_material_name_by_spirit_type(db: Session,
-                                     spirit_type: list):
-    # 서브 쿼리: Spirit 테이블에서 SpiritType에 해당하는 cocktail_id를 가져옴
-    subquery = db.query(Spirit.cocktail_id)\
-        .filter(Spirit.type.in_(spirit_type))\
-        .group_by(Spirit.cocktail_id)\
-        .having(func.count(Spirit.type) == len(spirit_type))\
-        .subquery()
+def get_material_by_spirits(db: Session,
+                            spirit_type: list):
+    query = db.query(Material.type, Material.name)
 
-    # 메인 쿼리: Material 테이블에서 서브쿼리의 cocktail_id에 해당하는 type, name을 가져옴
-    query = db.query(Material.type, Material.name)\
-        .filter(Material.cocktail_id.in_(subquery))\
-        .group_by(Material.type, Material.name)
+    if spirit_type:
+        # 서브 쿼리: Spirit 테이블에서 SpiritType에 해당하는 cocktail_id를 가져옴
+        subquery = db.query(Spirit.cocktail_id)\
+            .filter(Spirit.type.in_(spirit_type))\
+            .group_by(Spirit.cocktail_id)\
+            .having(func.count(Spirit.type) == len(spirit_type))\
+            .subquery()
+
+        # 메인 쿼리: Material 테이블에서 서브쿼리의 cocktail_id에 해당하는 type, name을 가져옴 | Groupby 로 중복 제거
+        query = query.filter(Material.cocktail_id.in_(subquery))\
+                     .group_by(Material.type, Material.name)
+    else: # spirit_type이 없으면 모든 type, name 반환
+        query = query.group_by(Material.type, Material.name)
 
     # 쿼리 실행 및 결과 반환
     total, results = query.count(), query.all()
-    materials = [{"type": str(row.type.value), "name": row.name} for row in results]  # Convert each Row object to a dictionary
+    materials = [{"type": str(row.type.value), "name": row.name} for row in results]
 
     return total, materials

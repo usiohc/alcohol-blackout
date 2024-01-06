@@ -25,16 +25,21 @@ def material_detail(material_id: int, db: Session = Depends(get_db)):
     return material
 
 
+# 재료 탭
 @router.get("/", response_model=material_schema.MaterialBySpirit)
-def material_name_by_spirit_type(q: str = Query("", convert_underscores=False), db: Session = Depends(get_db)):
-    spirit_type = q.split(",")
-    if not all(_type in SpiritType.__members__ for _type in spirit_type):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="올바르지 않은 SpiritUnit입니다.")
+def material_by_spirits(spirit_type: str = Query("", convert_underscores=False),
+                        db: Session = Depends(get_db)):
+    _spirit_type = []
+    if spirit_type:
+        _spirit_type = spirit_type.split(",")
+    if not all(spirit_type in SpiritType.__members__ for spirit_type in _spirit_type):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="올바르지 않은 Spirit Type 입니다.")
 
-    total, materials = material_crud.get_material_name_by_spirit_type(spirit_type=spirit_type, db=db)
+    total, materials = material_crud.get_material_by_spirits(spirit_type=_spirit_type, db=db)
+
     if not materials:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material을 찾을 수 없습니다.")
-    return {"total": total, "materials": materials}
+    return {"total": total, "items": materials}
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

@@ -12,14 +12,13 @@ class Material(BaseModel):
     cocktail_id: int
 
 
-class MaterialTypeName(BaseModel):
-    type: MaterialType
-    name: str = Field(..., nullable=False, max_length=20)
-
-
 class MaterialBySpirit(BaseModel):
+    class MaterialItem(BaseModel):
+        type: MaterialType
+        name: str
+
     total: int
-    materials: list[MaterialTypeName] = []
+    items: list[MaterialItem] = []
 
 
 class MaterialList(BaseModel):
