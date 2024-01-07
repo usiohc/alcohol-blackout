@@ -64,7 +64,7 @@ def material_by_spirits(spirit_type: str = Query("", convert_underscores=False),
                         db: Session = Depends(get_db)):
     _spirit_type = []
     if spirit_type:
-        _spirit_type = spirit_type.split(",")
+        _spirit_type = [spirit.capitalize() for spirit in spirit_type.split(",")]
     if not all(spirit_type in SpiritType.__members__ for spirit_type in _spirit_type):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="올바르지 않은 Spirit Type 입니다.")
 

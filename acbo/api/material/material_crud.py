@@ -61,7 +61,6 @@ def get_material_by_spirits(db: Session,
             .filter(Spirit.type.in_(spirit_type))\
             .group_by(Spirit.cocktail_id)\
             .having(func.count(Spirit.type) == len(spirit_type))\
-            .subquery()
 
         # 메인 쿼리: Material 테이블에서 서브쿼리의 cocktail_id에 해당하는 type, name을 가져옴 | Groupby 로 중복 제거
         query = query.filter(Material.cocktail_id.in_(subquery))\
