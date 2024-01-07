@@ -1,8 +1,8 @@
-from sqlalchemy import and_, union, tuple_
+from sqlalchemy import and_, union, tuple_, func
 from sqlalchemy.orm import Session
 
 from api.cocktail import cocktail_schema
-from models import Cocktail, Material
+from models import Cocktail, Material, Spirit
 
 
 def get_cocktail_list(db: Session):
@@ -51,20 +51,33 @@ def update_cocktail(db: Session,
     db.commit()
 
 
-def get_cocktail_list_by_spirit_material(q_spirits: list,
-                                         q_materials: list | None,
+def get_cocktail_list_by_spirit_material(spirits: list,
+                                         materials: list | None,
                                          db: Session):
-    # materials의 and 연산
-    q_spirits = set(q_spirits)
-    if q_materials:
-        for material_type, material_name in q_materials:
+
+    if spirits:
+        # 서브 쿼리:
+        subquery = db.query(Spirit.cocktail_id)\
+            .filter(Spirit.type.in_(spirits))\
+            .group_by(Spirit.cocktail_id)\
+            .having(func.count(Spirit.type) == len(spirits))
+
+        # 메인 쿼리:
+        spirits = db.query(Spirit.cocktail_id).filter(Spirit.cocktail_id.in_(subquery))\
+                 .group_by(Spirit.cocktail_id).all()
+    else: # spirits 이 없으면 모든 cocktail_id 반환
+        spirits = db.query(Spirit.cocktail_id).group_by(Spirit.cocktail_id).all()
+
+    result = set(spirit[0] for spirit in spirits)
+
+    if materials:
+        for material_type, material_name in materials:
             subquery = db.query(Material.cocktail_id)\
                 .filter(and_(Material.type == material_type, Material.name == material_name))\
                 .group_by(Material.cocktail_id).all()
-            q_spirits = q_spirits & set(result[0] for result in subquery) # subquery = [(1,), ...]
+            result = result & set(material[0] for material in subquery) # subquery = [(1,), ...]
 
-
-    query = db.query(Cocktail).filter(Cocktail.id.in_(q_spirits))
+    query = db.query(Cocktail).filter(Cocktail.id.in_(result))
     total, cocktails = query.count(), query.all()
     for cocktail in cocktails:
         cocktail.name = cocktail.name.replace("_", " ")

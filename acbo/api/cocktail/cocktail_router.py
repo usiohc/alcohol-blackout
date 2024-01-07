@@ -26,21 +26,6 @@ def cocktail_detail(cocktail_id: int, db: Session = Depends(get_db)):
     return cocktail
 
 
-@router.get("/", response_model=cocktail_schema.CocktailBySpiritMaterial)
-def cocktail_list_by_spirit_material(q_spirits: str = Query("", convert_underscores=False),
-                                     q_materials: str | None = Query(None, convert_underscores=False),
-                                     db: Session = Depends(get_db)):
-    # q = q.split(",")
-    q_spirits = list(map(int, q_spirits.split(",")))
-    if q_materials:
-        q_materials = q_materials.replace(" ", "_")
-        q_materials = list(map(str, q_materials.split(","))) # -> ["~:~", "~:~"]
-        q_materials = list(map(lambda x: x.split(":"), q_materials)) # -> [["~", "~"], ["~", "~"]]
-
-    total, cocktails = cocktail_crud.get_cocktail_list_by_spirit_material(q_spirits=q_spirits, q_materials=q_materials, db=db)
-    return {"total": total, "cocktails": cocktails}
-
-
 @router.get("/{cocktail_id}/spirits", response_model=cocktail_schema.CocktailSpiritList)
 def cocktail_spirit_list(cocktail_id: int, db: Session = Depends(get_db)):
     total, _cocktail_spirit_list = cocktail_crud.get_cocktail_spirit_list(db, cocktail_id=cocktail_id)
@@ -86,3 +71,22 @@ def cocktail_update(cocktail_id: int,
 
     cocktail_crud.update_cocktail(db=db, db_cocktail=cocktail, cocktail_update=_cocktail_update)
     return _cocktail_update
+
+
+@router.get("/", response_model=cocktail_schema.CocktailBySpiritMaterial)
+def cocktail_list_by_spirit_material(spirits: str | None = Query("", convert_underscores=False),
+                                     materials: str | None = Query(None, convert_underscores=False),
+                                     db: Session = Depends(get_db)):
+    if spirits:
+        spirits = spirits.replace(" ", "")
+        spirits = [spirit.capitalize() for spirit in spirits.split(",")]
+    if materials:
+        materials = materials.replace(" ", "_")
+        materials = list(map(str, materials.split(","))) # -> ["~:~", "~:~"]
+        # 다음과 같은 형태로 변경 [["~", "~"], ["~", "~"]], capitalize 적용
+        materials = list(map(lambda x: [y.title() for y in x.split(":")], materials))
+
+    total, cocktails = cocktail_crud.get_cocktail_list_by_spirit_material(spirits=spirits,
+                                                                          materials=materials,
+                                                                          db=db)
+    return {"total": total, "items": cocktails}

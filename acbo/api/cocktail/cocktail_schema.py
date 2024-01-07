@@ -48,5 +48,5 @@ class CocktailUpdate(CocktailCreate):
 
 class CocktailBySpiritMaterial(BaseModel):
     total: int
-    cocktails: list[Cocktail] = []
+    items: list[Cocktail] = []
     pass
