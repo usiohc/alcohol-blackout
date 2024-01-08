@@ -1,9 +1,21 @@
 from enum import Enum as myEnum
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 
 from database import Base
+
+KST = timezone(timedelta(hours=9))
+datetime = datetime.now(KST)
+
+
+class Skill(myEnum):
+    Build = 'Build'
+    Stir = 'Stir'
+    Shake = 'Shake'
+    Float = 'Float'
+    Blend = 'Blend'
 
 
 class Unit(myEnum):
@@ -62,9 +74,35 @@ class Material(Base):
 class Cocktail(Base):
     __tablename__ = 'cocktail'
 
-    id = Column(Integer, primary_key=True, )
+    id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
+    skill = Column(Enum(Skill))
     usage_count = Column(Integer, default=0)
 
     spirits = relationship("Spirit", cascade="all, delete", backref="cocktail")
     materials = relationship("Material", cascade="all, delete", backref="cocktail")
+
+
+class User(Base):
+    __tablename__ = 'user'
+
+    id = Column(Integer, primary_key=True)
+    # google_id = Column(Integer, nullable=True)
+    username = Column(String(length=20), unique=True, nullable=False)
+    password = Column(String(length=255), nullable=False)
+    email = Column(String(length=100), nullable=False)
+    created_at = Column(DateTime, default=datetime)
+    updated_at = Column(DateTime, default=datetime, onupdate=datetime)
+
+    bookmarks = relationship("Bookmark", cascade="all, delete", backref="user")
+
+
+class Bookmark(Base):
+    __tablename__ = 'bookmark'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
+
+    created_at = Column(DateTime, default=datetime)
+    # cocktail = relationship("Cocktail", backref="bookmark")

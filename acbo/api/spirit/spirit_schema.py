@@ -1,4 +1,5 @@
 from pydantic import BaseModel, field_validator
+from pydantic_core.core_schema import FieldValidationInfo
 
 from models import SpiritType, Unit
 
