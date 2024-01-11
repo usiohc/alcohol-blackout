@@ -89,8 +89,8 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     # google_id = Column(Integer, nullable=True)
     username = Column(String(length=20), unique=True, nullable=False)
+    email = Column(String(length=100), unique=True, nullable=False)
     password = Column(String(length=255), nullable=False)
-    email = Column(String(length=100), nullable=False)
     created_at = Column(DateTime, default=datetime)
     updated_at = Column(DateTime, default=datetime, onupdate=datetime)
 
