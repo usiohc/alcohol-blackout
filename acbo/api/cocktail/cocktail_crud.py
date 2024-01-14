@@ -51,22 +51,21 @@ def update_cocktail(db: Session,
     db.commit()
 
 
-def get_cocktail_list_by_spirit_material(spirits: list,
-                                         materials: list | None,
-                                         db: Session):
-
+def get_cocktail_by_spirit_material(spirits: list,
+                                    materials: list | None,
+                                    db: Session):
     if spirits:
         # 서브 쿼리:
         subquery = db.query(Spirit.cocktail_id)\
-            .filter(Spirit.type.in_(spirits))\
-            .group_by(Spirit.cocktail_id)\
-            .having(func.count(Spirit.type) == len(spirits))
+                     .filter(Spirit.type.in_(spirits))\
+                     .group_by(Spirit.cocktail_id)\
+                     .having(func.count(Spirit.type) == len(spirits))
 
         # 메인 쿼리:
         spirits = db.query(Spirit.cocktail_id).filter(Spirit.cocktail_id.in_(subquery))\
-                 .group_by(Spirit.cocktail_id).all()
+                    .group_by(Spirit.cocktail_id).all()
     else: # spirits 이 없으면 모든 cocktail_id 반환
-        spirits = db.query(Spirit.cocktail_id).group_by(Spirit.cocktail_id).all()
+        spirits = db.query(Cocktail.id).all()
 
     result = set(spirit[0] for spirit in spirits)
 
@@ -77,9 +76,23 @@ def get_cocktail_list_by_spirit_material(spirits: list,
                 .group_by(Material.cocktail_id).all()
             result = result & set(material[0] for material in subquery) # subquery = [(1,), ...]
 
-    query = db.query(Cocktail).filter(Cocktail.id.in_(result))
+    query = db.query(Cocktail).filter(Cocktail.id.in_(result)).order_by(Cocktail.usage_count.desc())
     total, cocktails = query.count(), query.all()
     for cocktail in cocktails:
         cocktail.name = cocktail.name.replace("_", " ")
 
     return total, cocktails
+
+
+def get_cocktail_by_name(db: Session, name: str):
+    cocktail_detail = db.query(Cocktail).filter(Cocktail.name == name).first()
+    if cocktail_detail:
+        cocktail_detail.usage_count += 1
+        db.add(cocktail_detail)
+        db.commit()
+
+        cocktail_detail.name = cocktail_detail.name.replace("_", " ")
+        for material in cocktail_detail.materials:
+            material.name = material.name.replace("_", " ")
+
+    return cocktail_detail

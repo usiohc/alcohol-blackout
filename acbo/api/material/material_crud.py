@@ -70,6 +70,6 @@ def get_material_by_spirits(db: Session,
 
     # 쿼리 실행 및 결과 반환
     total, results = query.count(), query.all()
-    materials = [{"type": str(row.type.value), "name": row.name} for row in results]
+    materials = [{"type": row.type.value, "name": row.name.replace("_", " ")} for row in results]
 
     return total, materials

@@ -65,6 +65,7 @@ class Material(Base):
     id = Column(Integer, primary_key=True)
     type = Column(Enum(MaterialType), nullable=False)
     name = Column(String, nullable=False)
+    name_ko = Column(String)
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'), nullable=True)
@@ -76,6 +77,7 @@ class Cocktail(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
+    name_ko = Column(String)
     skill = Column(Enum(Skill))
     usage_count = Column(Integer, default=0)
 

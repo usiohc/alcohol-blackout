@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_validator
 
 from api.material.material_schema import Material
 from api.spirit.spirit_schema import Spirit
+from models import Skill
 
 
 class Cocktail(BaseModel):
@@ -11,6 +12,7 @@ class Cocktail(BaseModel):
 
 
 class CocktailDetail(Cocktail):
+    skill: Skill
     spirits: list[Spirit] = []
     materials: list[Material] = []
 
