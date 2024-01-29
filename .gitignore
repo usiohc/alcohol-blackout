@@ -4,9 +4,17 @@
 /frontend
 /etc
 migrations
-
+/db
+.dockerignore
+*.sh
+*.pem
+*.pub
+*_credentials.json
 *.db
 alembic.ini
+init_data.py
+launch.json
+*.txt
 
 
 # python
