@@ -102,3 +102,12 @@ def get_cocktail_by_name(db: Session, name: str):
             material.name_ko = material.name_ko.replace("_", " ")
 
     return cocktail_detail
+
+
+def get_cocktail_bookmark_list(db: Session, cocktail_id_list: list):
+    query = db.query(Cocktail).filter(Cocktail.id.in_(cocktail_id_list)).order_by(Cocktail.name_ko.desc())
+    total, cocktails = query.count(), query.all()
+    for cocktail in cocktails:
+        cocktail.name = cocktail.name.replace("_", " ")
+        cocktail.name_ko = cocktail.name_ko.replace("_", " ")
+    return total, cocktails
