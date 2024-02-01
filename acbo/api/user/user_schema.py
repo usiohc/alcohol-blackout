@@ -14,23 +14,25 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, max_length=20)
     passwordCheck: str = Field(min_length=8, max_length=20)
 
-    @field_validator('username', 'email', 'password', 'passwordCheck')
-    def not_empty(cls, v):
-        if not v or not v.strip():
-            raise PydanticCustomError("ValueError",
-                                      "빈 값은 허용되지 않습니다.",
-                                      {"value": v})
-            # raise ValueError('빈 값은 허용되지 않습니다.')
-        return v
+    # @field_validator('username', 'email', 'password'')
+    # def not_empty(cls, v):
+    #     if not v or not v.strip():
+    #         raise PydanticCustomError("ValueError",
+    #                                   "빈 값은 허용되지 않습니다.",
+    #                                   {"value": v})
+    #     return v
 
-    @field_validator('password')
+    @field_validator('passwordCheck')
     def passwords_match(cls, v, info: FieldValidationInfo):
-        if 'passwordCheck' in info.data and v != info.data['passwordCheck']:
-            raise PydanticCustomError("ValueError",
-                                      "비밀번호가 일치하지 않습니다.",
-                                      {"value": v})
+        if v != info.data['password']:
+            raise ValueError('비밀번호가 일치하지 않습니다.')
         return v
 
 
 class UserLogin(BaseModel):
     pass
+
+
+class UserVerification(BaseModel):
+    username: str = Field(min_length=2, max_length=15)
+    email: EmailStr = Field(max_length=100)

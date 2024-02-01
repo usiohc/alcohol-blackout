@@ -51,7 +51,7 @@ def update_cocktail(db: Session,
     db.commit()
 
 
-def get_cocktail_by_spirit_material(spirits: list,
+def get_cocktail_by_spirit_material(spirits: list | None,
                                     materials: list | None,
                                     db: Session):
     if spirits:
@@ -76,10 +76,11 @@ def get_cocktail_by_spirit_material(spirits: list,
                 .group_by(Material.cocktail_id).all()
             result = result & set(material[0] for material in subquery) # subquery = [(1,), ...]
 
-    query = db.query(Cocktail).filter(Cocktail.id.in_(result)).order_by(Cocktail.usage_count.desc())
+    query = db.query(Cocktail).filter(Cocktail.id.in_(result)).order_by(Cocktail.name_ko.asc())
     total, cocktails = query.count(), query.all()
     for cocktail in cocktails:
         cocktail.name = cocktail.name.replace("_", " ")
+        cocktail.name_ko = cocktail.name_ko.replace("_", " ")
 
     return total, cocktails
 
@@ -92,7 +93,12 @@ def get_cocktail_by_name(db: Session, name: str):
         db.commit()
 
         cocktail_detail.name = cocktail_detail.name.replace("_", " ")
+        cocktail_detail.name_ko = cocktail_detail.name_ko.replace("_", " ")
+        for spirit in cocktail_detail.spirits:
+            spirit.name = spirit.name.replace("_", " ")
+            spirit.name_ko = spirit.name_ko.replace("_", " ")
         for material in cocktail_detail.materials:
             material.name = material.name.replace("_", " ")
+            material.name_ko = material.name_ko.replace("_", " ")
 
     return cocktail_detail

@@ -51,9 +51,9 @@ def update_material(db: Session,
     db.commit()
 
 
-def get_material_by_spirits(db: Session,
-                            spirit_type: list):
-    query = db.query(Material.type, Material.name)
+def get_material_by_spirit(db: Session,
+                           spirit_type: list):
+    query = db.query(Material.type, Material.name, Material.name_ko)
 
     if spirit_type:
         # 서브 쿼리: Spirit 테이블에서 SpiritType에 해당하는 cocktail_id를 가져옴
@@ -64,12 +64,19 @@ def get_material_by_spirits(db: Session,
 
         # 메인 쿼리: Material 테이블에서 서브쿼리의 cocktail_id에 해당하는 type, name을 가져옴 | Groupby 로 중복 제거
         query = query.filter(Material.cocktail_id.in_(subquery))\
-                     .group_by(Material.type, Material.name)
+                     .group_by(Material.type, Material.name, Material.name_ko)
     else: # spirit_type이 없으면 모든 type, name 반환
-        query = query.group_by(Material.type, Material.name)
+        query = query.group_by(Material.type, Material.name, Material.name_ko)
 
+    query = query.order_by(Material.type.asc(), Material.name.asc())
     # 쿼리 실행 및 결과 반환
     total, results = query.count(), query.all()
-    materials = [{"type": row.type.value, "name": row.name.replace("_", " ")} for row in results]
+
+    materials = []
+    if results:
+        for row in results:
+            materials.append({"type": row.type.value,
+                              "name": row.name.replace("_", " "),
+                              "name_ko": row.name_ko.replace("_", " ")})
 
     return total, materials

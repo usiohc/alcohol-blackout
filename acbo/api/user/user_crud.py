@@ -7,11 +7,17 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def create_user(db: Session, user_create: user_schema.UserCreate):
-    db_user = User(username=user_create.username,
-                   email=user_create.email,
-                   password=pwd_context.hash(user_create.password))
-    db.add(db_user)
-    db.commit()
+    try:
+        db_user = User(username=user_create.username,
+                       email=user_create.email,
+                       password=pwd_context.hash(user_create.password))
+        db.add(db_user)
+        db.commit()
+        return True
+    except Exception as e:
+        print("create_user 실패")
+        print(e)
+        return False
 
 
 def get_existing_username(db: Session, username: str):

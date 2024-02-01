@@ -1,4 +1,5 @@
 from pydantic import BaseModel, field_validator, Field
+from pydantic_core import PydanticCustomError
 
 from models import MaterialType, Unit
 
@@ -6,7 +7,8 @@ from models import MaterialType, Unit
 class Material(BaseModel):
     id: int
     type: MaterialType
-    name: str = Field(..., nullable=False, max_length=20)
+    name: str
+    name_ko: str
     unit: Unit
     amount: int
     cocktail_id: int
@@ -19,10 +21,20 @@ class MaterialList(BaseModel):
 
 class MaterialCreate(BaseModel):
     type: MaterialType
-    name: str = Field(..., nullable=False, max_length=20)
+    name: str
+    name_ko: str
     unit: Unit
     amount: int
     cocktail_id: int
+
+
+    @field_validator('type', 'name', 'name_ko', 'unit', 'amount')
+    def validate_material(cls, v):
+        if not v or not v.strip():
+            raise PydanticCustomError("ValueError",
+                                      "빈 값은 허용되지 않습니다.",
+                                      {"value": v})
+        return v
 
     @field_validator('type')
     def validate_material_type(cls, v):
@@ -32,7 +44,6 @@ class MaterialCreate(BaseModel):
 
     @field_validator('unit')
     def unit_check(cls, v):
-        # Web에서 Dropdown으로 Unit을 선택하면 상관 없음
         if v.name not in Unit.__members__:
             raise ValueError('존재하지 않는 단위 입니다.')
         return v
@@ -54,6 +65,18 @@ class MaterialBySpirit(BaseModel):
     class MaterialItem(BaseModel):
         type: MaterialType
         name: str
+        name_ko: str
 
     total: int
     items: list[MaterialItem] = []
+
+
+class MaterialRequest(BaseModel):
+    """
+    GCS에 저장할 칵테일 레시피 JSON의 Material
+    """
+    type: MaterialType
+    name: str
+    name_ko: str
+    unit: Unit
+    amount: int

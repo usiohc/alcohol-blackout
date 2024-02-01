@@ -1,14 +1,14 @@
-from typing import Union
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from starlette import status
 
 from api.cocktail import cocktail_crud, cocktail_schema
+from cloud_storage import upload_blob_from_memory
 from database import get_db
 
 router = APIRouter(
     prefix="/api/cocktails",
+    tags=["cocktail"],
 )
 
 
@@ -57,6 +57,7 @@ def cocktail_delete(cocktail_id: int, db: Session = Depends(get_db)):
     cocktail_crud.delete_cocktail(db=db, cocktail_id=cocktail_id)
 
 
+# 유저 API
 @router.put("/{cocktail_id}", status_code=status.HTTP_200_OK)
 def cocktail_update(cocktail_id: int,
                     _cocktail_update: cocktail_schema.CocktailUpdate,
@@ -86,11 +87,17 @@ def cocktail_by_name(name: str,
     return cocktail
 
 
-
 @router.get("/", response_model=cocktail_schema.CocktailBySpiritMaterial)
 def cocktail_by_spirit_material(spirits: str | None = Query("", convert_underscores=False),
                                 materials: str | None = Query("", convert_underscores=False),
                                 db: Session = Depends(get_db)):
+    """
+    {
+        Args:
+            spirits: [...],
+            materials: [material.type:material.name, ...],
+    }
+    """
     if spirits:
         spirits = spirits.replace(" ", "")
         spirits = [spirit.capitalize() for spirit in spirits.split(",")]
@@ -103,4 +110,19 @@ def cocktail_by_spirit_material(spirits: str | None = Query("", convert_undersco
     total, cocktails = cocktail_crud.get_cocktail_by_spirit_material(spirits=spirits,
                                                                      materials=materials,
                                                                      db=db)
+    if not cocktails:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cocktail을 찾을 수 없습니다.")
     return {"total": total, "items": cocktails}
+
+
+@router.post("/request", status_code=status.HTTP_201_CREATED)
+def cocktail_request(_cocktail_request: cocktail_schema.CocktailRequest):
+    from fastapi.encoders import jsonable_encoder
+    _cocktail_request = jsonable_encoder(_cocktail_request) # str -> dict
+    # print(type(_cocktail_request))
+    # print(_cocktail_request)
+
+    filename = _cocktail_request['name_ko'] # GCS에 저장할 파일명
+    if not upload_blob_from_memory(bucket_name="acbo-request_recipes", data=_cocktail_request, destination_blob_name=filename):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="칵테일 레시피를 요청하는데 실패했습니다."
+                                                                                      "관리자에게 문의해주세요.")

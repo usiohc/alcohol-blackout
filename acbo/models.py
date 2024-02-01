@@ -19,6 +19,16 @@ class Skill(myEnum):
 
 
 class Unit(myEnum):
+    """
+    ml: 밀리리터
+    tsp: 티스푼
+    dash: 5방울, 1ml
+    drop: 방울, 0.2ml
+    pinch: 꼬집
+    Full_up: 취향껏
+    piece: 조각
+    """
+
     ml = 'ml'
     tsp = 'tsp'
     dash = 'dash'
@@ -46,6 +56,7 @@ class MaterialType(myEnum):
     Juice = 'Juice'
     Soda = 'Soda'
     Garnish = 'Garnish'
+    Etc = 'Etc'
 
 
 class Spirit(Base):
@@ -53,6 +64,8 @@ class Spirit(Base):
 
     id = Column(Integer, primary_key=True)
     type = Column(Enum(SpiritType), nullable=False)
+    name = Column(String(length=50), nullable=True) # '' 일 경우 anything, 무엇이든 상관 없음.
+    name_ko = Column(String(length=50), nullable=True)
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
@@ -64,8 +77,8 @@ class Material(Base):
 
     id = Column(Integer, primary_key=True)
     type = Column(Enum(MaterialType), nullable=False)
-    name = Column(String, nullable=False)
-    name_ko = Column(String)
+    name = Column(String(length=50), nullable=False)
+    name_ko = Column(String(length=50), nullable=False)
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'), nullable=True)
@@ -76,9 +89,10 @@ class Cocktail(Base):
     __tablename__ = 'cocktail'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    name_ko = Column(String)
-    skill = Column(Enum(Skill))
+    name = Column(String(length=50), nullable=False)
+    name_ko = Column(String(length=50), nullable=False)
+    abv = Column(Integer, nullable=False)
+    skill = Column(Enum(Skill), nullable=False)
     usage_count = Column(Integer, default=0)
 
     spirits = relationship("Spirit", cascade="all, delete", backref="cocktail")
@@ -86,6 +100,19 @@ class Cocktail(Base):
 
 
 class User(Base):
+    """
+    id: int
+    username: 닉네임
+    email: 이메일, 로그인에 사용됨
+    password: 비밀번호
+    created_at: 생성일
+    updated_at: 수정일
+    status: {
+        0: 일반 유저 -> 이메일 인증 X, 로그인 불가
+        1: 일반 유저 -> 이메일 인증 O, 로그인 가능
+        2: 관리자
+    }
+    """
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
@@ -95,6 +122,7 @@ class User(Base):
     password = Column(String(length=255), nullable=False)
     created_at = Column(DateTime, default=datetime)
     updated_at = Column(DateTime, default=datetime, onupdate=datetime)
+    status = Column(Integer, default=0)
 
     bookmarks = relationship("Bookmark", cascade="all, delete", backref="user")
 
@@ -107,4 +135,4 @@ class Bookmark(Base):
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
 
     created_at = Column(DateTime, default=datetime)
-    # cocktail = relationship("Cocktail", backref="bookmark")
+    cocktails = relationship("Cocktail", backref="bookmark")

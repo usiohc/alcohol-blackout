@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from starlette import status
 
 from api.user.user_crud import pwd_context
+from api.user.user_schema import UserVerification
 from database import get_db
 from api.user import user_crud, user_schema
 from core.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
@@ -15,6 +16,7 @@ from models import datetime
 
 router = APIRouter(
     prefix="/api/users",
+    tags=["user"],
 )
 
 
@@ -27,7 +29,9 @@ def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="이미 존재하는 이메일입니다.")
 
-    user_crud.create_user(db=db, user_create=_user_create)
+    # if user_crud.create_user(db=db, user_create=_user_create):
+    #     verification_
+
 
 
 @router.post("/login", response_model=user_schema.Token)
@@ -58,4 +62,6 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
     }
 
 
-    # return user
+@router.get("/verify", status_code=status.HTTP_204_NO_CONTENT)
+def send_verification_email(token: str, email: str):
+    pass

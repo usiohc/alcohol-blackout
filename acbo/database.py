@@ -1,10 +1,11 @@
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, declarative_base
+from core.config import SQLALCHEMY_DATABASE_URL
 
-SQLALCHEMY_DATABASE_URL: str = "sqlite:///./acbo.db"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL,
+    # connect_args={"check_same_thread": False} # SQLite DB
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

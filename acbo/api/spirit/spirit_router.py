@@ -7,6 +7,7 @@ from database import get_db
 
 router = APIRouter(
     prefix="/api/spirits",
+    tags=["spirit"],
 )
 
 
