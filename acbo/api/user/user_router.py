@@ -2,13 +2,13 @@ from datetime import timedelta
 
 from fastapi import APIRouter, HTTPException
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordRequestForm
-from jose import jwt
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from starlette import status
 
 from api.user.user_crud import pwd_context
-from api.user.user_schema import UserVerification
+from api.user.user_schema import oauth2_scheme
 from database import get_db
 from api.user import user_crud, user_schema
 from core.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
@@ -28,6 +28,8 @@ def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_
     if user_crud.get_existing_email(db=db, email=_user_create.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="이미 존재하는 이메일입니다.")
+
+    user_crud.create_user(db=db, user_create=_user_create)
 
     # if user_crud.create_user(db=db, user_create=_user_create):
     #     verification_
@@ -65,3 +67,22 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
 @router.get("/verify", status_code=status.HTTP_204_NO_CONTENT)
 def send_verification_email(token: str, email: str):
     pass
+def get_current_user(token: str = Depends(oauth2_scheme),
+                     db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    else:
+        user = user_crud.get_user(db, email=email)
+        if user is None:
+            raise credentials_exception
+        return user

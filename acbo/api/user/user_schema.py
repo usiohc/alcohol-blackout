@@ -1,12 +1,16 @@
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, field_validator, EmailStr, Field
 from pydantic_core import PydanticCustomError
 from pydantic_core.core_schema import FieldValidationInfo
 
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
+
 class Token(BaseModel):
     access_token: str
     token_type: str
     email: EmailStr
+
 
 class UserCreate(BaseModel):
     username: str = Field(min_length=2, max_length=15)
