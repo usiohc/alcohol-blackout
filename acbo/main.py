@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
@@ -8,6 +9,7 @@ from api.spirit import spirit_router
 from api.material import material_router
 from api.user import user_router
 from api.bookmark import bookmark_router
+from api.user.email import email
 
 
 app = FastAPI()
@@ -37,6 +39,7 @@ app.include_router(material_router.router)
 app.include_router(cocktail_router.router)
 app.include_router(user_router.router)
 app.include_router(bookmark_router.router)
+app.include_router(email.router)
 
 
 # swagger 설정

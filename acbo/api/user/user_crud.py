@@ -30,3 +30,9 @@ def get_existing_email(db: Session, email: str):
 
 def get_user(db: Session, email: str):
     return db.query(User).filter(User.email == email).first()
+
+
+def verified_email(db, user: User):
+    user.status = 1
+    db.add(user)
+    db.commit()

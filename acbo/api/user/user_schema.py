@@ -5,11 +5,13 @@ from pydantic_core.core_schema import FieldValidationInfo
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
+# oauth2_scheme_email_token = OAuth2PasswordBearer(tokenUrl="/api/users/register")
 
 class Token(BaseModel):
     access_token: str
     token_type: str
     email: EmailStr
+
 
 
 class UserCreate(BaseModel):
@@ -33,10 +35,5 @@ class UserCreate(BaseModel):
         return v
 
 
-class UserLogin(BaseModel):
-    pass
-
-
-class UserVerification(BaseModel):
-    username: str = Field(min_length=2, max_length=15)
-    email: EmailStr = Field(max_length=100)
+class UserLogin(Token):
+    username: str
