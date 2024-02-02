@@ -16,4 +16,8 @@ class BookmarkList(BaseModel):
 
 class BookmarkCocktailList(BaseModel):
     total: int
-    cocktails: list[Cocktail] = []
+    items: list[Cocktail] = []
+
+
+class Bookmarked(BaseModel):
+    is_bookmarked: bool

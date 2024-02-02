@@ -36,4 +36,13 @@ def bookmark_cocktail_list(db: Session = Depends(get_db),
         return {'total': 0, 'cocktails': []}
     cocktail_id_list = [bookmark.cocktail_id for bookmark in _bookmark_list]
     total, cocktails = cocktail_crud.get_cocktail_bookmark_list(db, cocktail_id_list=cocktail_id_list)
-    return {'total': total, 'cocktails': cocktails}
+    return {'total': total, 'items': cocktails}
+
+
+@router.get("/{cocktail_id}", response_model=bookmark_schema.Bookmarked)
+def bookmarked(cocktail_id: int,
+                db: Session = Depends(get_db),
+               current_user: User = Depends(get_current_user)):
+    if bookmark_crud.get_is_bookmarked(db, user=current_user, cocktail_id=cocktail_id):
+        return {'is_bookmarked': True}
+    return {'is_bookmarked': False}

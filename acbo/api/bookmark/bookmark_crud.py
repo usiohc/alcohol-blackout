@@ -19,3 +19,8 @@ def delete_bookmark(db: Session, user: User, cocktail_id: int):
 
 def get_bookmark_list(user: User):
     return user.bookmarks
+
+
+def get_is_bookmarked(db: Session, user: User, cocktail_id: int):
+    return db.query(Bookmark).filter(Bookmark.user_id == user.id,
+                                     Bookmark.cocktail_id == cocktail_id).first()
