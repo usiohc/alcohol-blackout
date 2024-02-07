@@ -8,4 +8,5 @@ COPY /acbo /app/acbo
 
 RUN rm -f /app/requirements.txt /app/acbo/requirements.txt 
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+#CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

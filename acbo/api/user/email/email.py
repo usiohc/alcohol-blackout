@@ -66,6 +66,9 @@ def _verify_email(db: Session,
         if email is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail="찾을 수 없는 토큰 값 입니다. ")
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="만료된 토큰입니다.")
     except JWTError:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="유효하지 않은 토큰입니다.")

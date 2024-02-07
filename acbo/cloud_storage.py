@@ -1,5 +1,5 @@
 from google.cloud import storage
-from models import datetime
+from models import datetime_date
 from json import dumps
 
 
@@ -12,7 +12,7 @@ def upload_blob_from_memory(bucket_name: str, data: dict, destination_blob_name:
     json_data = dumps(data, ensure_ascii=False).encode('utf-8').decode('utf-8')
     try:
         bucket = _storage_client.bucket(bucket_name)
-        bucket_path = f"{datetime.date()}"
+        bucket_path = f"{datetime_date()}"
         idx = get_blobs_count(bucket_name, bucket_path, _storage_client)
 
         blob = bucket.blob(bucket_path + "/" + f"{idx}-{destination_blob_name}.json")

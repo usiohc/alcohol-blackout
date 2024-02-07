@@ -16,7 +16,6 @@ app = FastAPI()
 
 origins = [
     # for local development -> frontend (Vite)
-
 ]
 
 if DEBUG:
