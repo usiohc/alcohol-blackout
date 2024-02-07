@@ -1,13 +1,17 @@
 from enum import Enum as myEnum
-from datetime import datetime, timedelta, timezone
+from datetime import datetime as dt, timedelta, timezone
 
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 
 from database import Base
 
+
 KST = timezone(timedelta(hours=9))
-datetime = datetime.now(KST)
+def datetime():
+    return dt.now(KST)
+def datetime_date():
+    return dt.now(KST).date()
 
 
 class Skill(myEnum):
@@ -34,7 +38,7 @@ class Unit(myEnum):
     dash = 'dash'
     drop = 'drop'
     pinch = 'pinch'
-    Full_up = 'Full_up' # Full_up -> amount = 0
+    Full_up = 'Full_up'  # Full_up -> amount = 0
     piece = 'piece'
 
 
@@ -45,8 +49,8 @@ class SpiritType(myEnum):
     Tequila = 'Tequila'
     Whisky = 'Whisky'
     Brandy = 'Brandy'
-    Liqueur = 'Liqueur'
-    Beer = 'Beer'
+    # Liqueur = 'Liqueur'
+    # Beer = 'Beer'
     Wine = 'Wine'
 
 
@@ -64,7 +68,7 @@ class Spirit(Base):
 
     id = Column(Integer, primary_key=True)
     type = Column(Enum(SpiritType), nullable=False)
-    name = Column(String(length=50), nullable=True) # '' 일 경우 anything, 무엇이든 상관 없음.
+    name = Column(String(length=50), nullable=True)  # '' 일 경우 anything, 무엇이든 상관 없음.
     name_ko = Column(String(length=50), nullable=True)
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
@@ -120,8 +124,8 @@ class User(Base):
     username = Column(String(length=20), unique=True, nullable=False)
     email = Column(String(length=100), unique=True, nullable=False)
     password = Column(String(length=255), nullable=False)
-    created_at = Column(DateTime, default=datetime)
-    updated_at = Column(DateTime, default=datetime, onupdate=datetime)
+    created_at = Column(DateTime, default=datetime())
+    updated_at = Column(DateTime, default=datetime(), onupdate=datetime())
     status = Column(Integer, default=0)
 
     bookmarks = relationship("Bookmark", cascade="all, delete", backref="user")
@@ -134,5 +138,5 @@ class Bookmark(Base):
     user_id = Column(Integer, ForeignKey('user.id'))
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
 
-    created_at = Column(DateTime, default=datetime)
+    created_at = Column(DateTime, default=datetime())
     cocktails = relationship("Cocktail", backref="bookmark")

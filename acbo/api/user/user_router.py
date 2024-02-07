@@ -7,13 +7,13 @@ from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from starlette import status
 
+from database import get_db
+from core.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
+from models import datetime, User
+from api.user import user_crud, user_schema
 from api.user.email.email import send_email_token
 from api.user.user_crud import pwd_context
 from api.user.user_schema import oauth2_scheme
-from database import get_db
-from api.user import user_crud, user_schema
-from core.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
-from models import datetime
 
 router = APIRouter(
     prefix="/api/users",
@@ -22,11 +22,11 @@ router = APIRouter(
 
 
 @router.post("/register", status_code=status.HTTP_200_OK)
-async def user_create(_user_create: user_schema.UserCreate, db: Session = Depends(get_db)):
+async def user_register(_user_create: user_schema.UserCreate, db: Session = Depends(get_db)):
     if user_crud.get_existing_username(db=db, username=_user_create.username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="이미 존재하는 닉네임입니다.")
-    if user_crud.get_existing_email(db=db, email=_user_create.email):
+    if user_crud.get_user(db=db, email=_user_create.email):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="이미 존재하는 이메일입니다.")
 
@@ -37,7 +37,7 @@ async def user_create(_user_create: user_schema.UserCreate, db: Session = Depend
 
     data = {
         "email": _user_create.email,
-        "exp": datetime + timedelta(minutes=30)
+        "exp": datetime() + timedelta(minutes=30)
     }
     access_token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
     await send_email_token(access_token, _user_create.email)
@@ -45,7 +45,7 @@ async def user_create(_user_create: user_schema.UserCreate, db: Session = Depend
 
 
 @router.post("/login", response_model=user_schema.UserLogin)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
+def user_login(form_data: OAuth2PasswordRequestForm = Depends(),
                            db: Session = Depends(get_db)):
     email = form_data.username
     password = form_data.password
@@ -66,7 +66,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(),
     # make access token
     data = {
         "sub": email,
-        "exp": datetime + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        "exp": datetime() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     }
     access_token = jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -97,3 +97,40 @@ def get_current_user(token: str = Depends(oauth2_scheme),
         if user is None:
             raise credentials_exception
         return user
+
+
+@router.get("/me", response_model=user_schema.UserBase)
+def user_read(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
+@router.patch("/username", status_code=status.HTTP_200_OK)
+def user_update_username(_user_update_username: user_schema.UserUpdateUsername,
+                         db: Session = Depends(get_db),
+                         current_user: User = Depends(get_current_user)):
+    username = _user_update_username.username
+    if user_crud.get_existing_username(db, username):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="이미 존재하는 닉네임입니다.")
+    user_crud.update_username(db, user=current_user, username=username)
+    return {"message": "닉네임이 수정되었습니다."}
+
+
+@router.patch("/password", status_code=status.HTTP_200_OK)
+def user_update_password(_user_update_password: user_schema.UserUpdatePassword,
+                         db: Session = Depends(get_db),
+                         current_user: User = Depends(get_current_user)):
+    password = _user_update_password.password
+    if pwd_context.verify(password, current_user.password):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="기존 비밀번호와 동일합니다.")
+
+    user_crud.update_password(db, user=current_user, password=password)
+    return {"message": "비밀번호가 수정되었습니다."}
+
+
+@router.delete("", status_code=status.HTTP_200_OK)
+def user_delete(db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_user)):
+    user_crud.delete_user(db, user=current_user)
+    return {"message": "회원탈퇴가 완료되었습니다."}

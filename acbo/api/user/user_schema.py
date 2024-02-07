@@ -3,9 +3,8 @@ from pydantic import BaseModel, field_validator, EmailStr, Field
 from pydantic_core import PydanticCustomError
 from pydantic_core.core_schema import FieldValidationInfo
 
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
-# oauth2_scheme_email_token = OAuth2PasswordBearer(tokenUrl="/api/users/register")
+
 
 class Token(BaseModel):
     access_token: str
@@ -13,10 +12,12 @@ class Token(BaseModel):
     email: EmailStr
 
 
-
-class UserCreate(BaseModel):
+class UserBase(BaseModel):
     username: str = Field(min_length=2, max_length=15)
     email: EmailStr = Field(max_length=100)
+
+
+class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=20)
     passwordCheck: str = Field(min_length=8, max_length=20)
 
@@ -37,3 +38,18 @@ class UserCreate(BaseModel):
 
 class UserLogin(Token):
     username: str
+
+
+class UserUpdateUsername(BaseModel):
+    username: str = Field(min_length=2, max_length=15)
+
+
+class UserUpdatePassword(BaseModel):
+    password: str = Field(min_length=8, max_length=20)
+    passwordCheck: str = Field(min_length=8, max_length=20)
+
+    @field_validator('passwordCheck')
+    def passwords_match(cls, v, info: FieldValidationInfo):
+        if v != info.data['password']:
+            raise ValueError('비밀번호가 일치하지 않습니다.')
+        return v
