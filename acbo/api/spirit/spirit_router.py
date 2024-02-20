@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
 
+from api.cocktail import cocktail_crud
 from api.spirit import spirit_schema, spirit_crud
 from database import get_db
 
@@ -25,22 +26,33 @@ def spirit_detail(spirit_id: int, db: Session = Depends(get_db)):
     return spirit
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=None)
 def spirit_create(_spirit_create: spirit_schema.SpiritCreate,
                   db: Session = Depends(get_db)):
-    if spirit_crud.get_exist_spirit(db=db, spirit=_spirit_create):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 Spirit입니다.")
-    spirit_crud.create_spirit(db=db, spirit=_spirit_create)
+    """
+    ```json
+    Args:
+        _spirit_create: {
+            "type": "Vodka", (Enum)
+            "name": "str" || "", (Nullable)
+            "name_ko": "str" || "", (Nullable)
+            "unit": "ml", (Enum)
+            "amount": 0, (1 이상)
+            "cocktail_id": Optional[int]
+        }
+    Returns:
+        None
+    ```
+    """
+    if not _spirit_create.cocktail_id:
+        _spirit_create.cocktail_id = None
+    elif cocktail_crud.get_cocktail(db=db, cocktail_id=_spirit_create.cocktail_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="cocktail_id에 해당하는 칵테일를 찾을 수 없습니다.")
+
+    return spirit_crud.create_spirit(db=db, spirit=_spirit_create)
 
 
-@router.delete("/{spirit_id}", status_code=status.HTTP_204_NO_CONTENT)
-def spirit_delete(spirit_id: int, db: Session = Depends(get_db)):
-    if not spirit_crud.get_spirit(db=db, spirit_id=spirit_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Spirit입니다.")
-    spirit_crud.delete_spirit(db=db, spirit_id=spirit_id)
-
-
-@router.put("/{spirit_id}", status_code=status.HTTP_200_OK)
+@router.put("/{spirit_id}", status_code=status.HTTP_200_OK, response_model=None)
 def spirit_update(spirit_id: int,
                   _spirit_update: spirit_schema.SpiritUpdate,
                   db: Session = Depends(get_db)):
@@ -48,9 +60,16 @@ def spirit_update(spirit_id: int,
     if not spirit:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Spirit입니다.")
 
-    # 입력받은 Spirit가 이미 존재하는지 확인
-    if spirit_crud.get_exist_spirit(db=db, spirit=_spirit_update):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 Spirit입니다.")
+    if not _spirit_update.cocktail_id:
+        _spirit_update.cocktail_id = None
+    elif cocktail_crud.get_cocktail(db=db, cocktail_id=_spirit_update.cocktail_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="cocktail_id에 해당하는 칵테일를 찾을 수 없습니다.")
 
-    spirit_crud.update_spirit(db=db, db_spirit=spirit, spirit_update=_spirit_update)
-    return _spirit_update
+    return spirit_crud.update_spirit(db=db, db_spirit=spirit, spirit_update=_spirit_update)
+
+
+@router.delete("/{spirit_id}", status_code=status.HTTP_204_NO_CONTENT)
+def spirit_delete(spirit_id: int, db: Session = Depends(get_db)):
+    if not spirit_crud.get_spirit(db=db, spirit_id=spirit_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Spirit입니다.")
+    spirit_crud.delete_spirit(db=db, spirit_id=spirit_id)

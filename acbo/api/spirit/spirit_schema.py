@@ -1,42 +1,29 @@
+from typing import List, Optional
+
 from pydantic import BaseModel, field_validator
-from pydantic_core import PydanticCustomError
-from pydantic_core.core_schema import FieldValidationInfo
 
 from models import SpiritType, Unit
 
 
-class Spirit(BaseModel):
-    id: int
+class SpiritBase(BaseModel):
     type: SpiritType
     name: str
     name_ko: str
     unit: Unit
     amount: int
-    cocktail_id: int
+
+
+class Spirit(SpiritBase):
+    id: int
+    cocktail_id: Optional[int]
 
 
 class SpiritList(BaseModel):
     total: int
-    spirits: list[Spirit] = []
+    spirits: List[Spirit] = []
 
 
-class SpiritCreate(BaseModel):
-    type: SpiritType
-    name: str
-    name_ko: str
-    unit: Unit
-    amount: int
-    cocktail_id: int
-
-    @field_validator('type', 'unit', 'amount')
-    def validate_material(cls, v):
-        if not v or not v.strip():
-            raise PydanticCustomError("ValueError",
-                                      "빈 값은 허용되지 않습니다.",
-                                      {"value": v})
-        return v
-
-
+class SpiritBaseCreate(SpiritBase):
     @field_validator('type')
     def validate_spirit_type(cls, v):
         if v.name not in SpiritType.__members__:
@@ -59,16 +46,16 @@ class SpiritCreate(BaseModel):
         return v
 
 
+class SpiritCreate(SpiritBaseCreate):
+    cocktail_id: Optional[int]
+
+
 class SpiritUpdate(SpiritCreate):
     pass
 
 
-class SpiritRequest(BaseModel):
+class SpiritRequest(SpiritBaseCreate):
     """
     GCS에 저장할 칵테일 레시피 JSON의 Spirit
     """
-    type: SpiritType
-    name: str
-    name_ko: str
-    unit: Unit
-    amount: int
+    pass
