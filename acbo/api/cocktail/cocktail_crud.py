@@ -1,4 +1,4 @@
-from sqlalchemy import and_, union, tuple_, func
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from api.cocktail import cocktail_schema
@@ -6,108 +6,79 @@ from models import Cocktail, Material, Spirit
 
 
 def get_cocktail_list(db: Session):
-    _cocktail_list = db.query(Cocktail).order_by(Cocktail.name.asc())
-    total, cocktail_list = _cocktail_list.count(), _cocktail_list.all()
-    return total, cocktail_list
+    cocktail_list = db.query(Cocktail).order_by(Cocktail.name.asc()).all()
+    return len(cocktail_list), cocktail_list
 
 
 def get_cocktail(db: Session, cocktail_id: int):
-    cocktail_detail = db.query(Cocktail).get(cocktail_id)
-    return cocktail_detail
+    return db.query(Cocktail).get(cocktail_id)
 
 
 def get_cocktail_spirit_list(db: Session, cocktail_id: int):
     cocktail_spirit_list = db.query(Cocktail).get(cocktail_id).spirits
-    total = len(cocktail_spirit_list)
-    return total, cocktail_spirit_list
+    return len(cocktail_spirit_list), cocktail_spirit_list
 
 
 def get_cocktail_material_list(db: Session, cocktail_id: int):
     cocktail_material_list = db.query(Cocktail).get(cocktail_id).materials
-    total = len(cocktail_material_list)
-    return total, cocktail_material_list
-
-
-def get_exist_cocktail(db: Session, cocktail: cocktail_schema.CocktailCreate | cocktail_schema.CocktailUpdate):
-    return db.query(Cocktail).filter(Cocktail.name == cocktail.name).first()
+    return len(cocktail_material_list), cocktail_material_list
 
 
 def create_cocktail(db: Session, cocktail: cocktail_schema.CocktailCreate):
-    db_cocktail = Cocktail(name=cocktail.name)
+    db_cocktail = Cocktail(**cocktail.model_dump())
     db.add(db_cocktail)
     db.commit()
-
-def delete_cocktail(db: Session, cocktail_id: int):
-    cocktail_delete = db.query(Cocktail).filter(Cocktail.id == cocktail_id).first()
-    db.delete(cocktail_delete)
-    db.commit()
+    db.refresh(db_cocktail)
+    return db_cocktail
 
 
 def update_cocktail(db: Session,
                     db_cocktail: Cocktail,
                     cocktail_update: cocktail_schema.CocktailUpdate):
-    db_cocktail.name = cocktail_update.name
+    for key, value in cocktail_update.model_dump().items():
+        setattr(db_cocktail, key, value)
     db.add(db_cocktail)
+    db.commit()
+    db.refresh(db_cocktail)
+    return db_cocktail
+
+
+def delete_cocktail(db: Session, cocktail_id: int):
+    cocktail_delete = db.query(Cocktail).get(cocktail_id)
+    db.delete(cocktail_delete)
     db.commit()
 
 
-def get_cocktail_by_spirit_material(spirits: list | None,
-                                    materials: list | None,
+def get_cocktail_by_spirit_material(spirits: list,
+                                    materials: list,
                                     db: Session):
     if spirits:
         # 서브 쿼리:
-        subquery = db.query(Spirit.cocktail_id)\
-                     .filter(Spirit.type.in_(spirits))\
-                     .group_by(Spirit.cocktail_id)\
-                     .having(func.count(Spirit.type) == len(spirits))
-
+        subquery = db.query(Spirit.cocktail_id) \
+            .filter(Spirit.type.in_(spirits)) \
+            .group_by(Spirit.cocktail_id) \
+            .having(func.count(Spirit.type) == len(spirits))
         # 메인 쿼리:
-        spirits = db.query(Spirit.cocktail_id).filter(Spirit.cocktail_id.in_(subquery))\
-                    .group_by(Spirit.cocktail_id).all()
-    else: # spirits 이 없으면 모든 cocktail_id 반환
+        spirits = db.query(Spirit.cocktail_id).filter(Spirit.cocktail_id.in_(subquery)).all()
+    else:  # spirits 이 없으면 모든 cocktail_id 반환
         spirits = db.query(Cocktail.id).all()
 
-    result = set(spirit[0] for spirit in spirits)
+    # spirits = [(1,), ...] | [] -> result = (1, ...) | ()
+    result = set(map(lambda x: x[0], spirits))
+    print(result)
 
     if materials:
         for material_type, material_name in materials:
-            subquery = db.query(Material.cocktail_id)\
-                .filter(and_(Material.type == material_type, Material.name == material_name))\
+            _materials = db.query(Material.cocktail_id) \
+                .filter(and_(Material.type == material_type, Material.name == material_name)) \
                 .group_by(Material.cocktail_id).all()
-            result = result & set(material[0] for material in subquery) # subquery = [(1,), ...]
+            result = result & set(map(lambda x: x[0], _materials))  # _materials = [(1,), ...]
 
-    query = db.query(Cocktail).filter(Cocktail.id.in_(result)).order_by(Cocktail.name_ko.asc())
-    total, cocktails = query.count(), query.all()
-    for cocktail in cocktails:
-        cocktail.name = cocktail.name.replace("_", " ")
-        cocktail.name_ko = cocktail.name_ko.replace("_", " ")
+    cocktails = db.query(Cocktail).filter(Cocktail.id.in_(result)).order_by(Cocktail.name_ko.asc(),
+                                                                            Cocktail.name.asc()).all()
 
-    return total, cocktails
+    return len(cocktails), cocktails
 
 
-def get_cocktail_by_name(db: Session, name: str):
-    cocktail_detail = db.query(Cocktail).filter(Cocktail.name == name).first()
-    if cocktail_detail:
-        cocktail_detail.usage_count += 1
-        db.add(cocktail_detail)
-        db.commit()
-
-        cocktail_detail.name = cocktail_detail.name.replace("_", " ")
-        cocktail_detail.name_ko = cocktail_detail.name_ko.replace("_", " ")
-        for spirit in cocktail_detail.spirits:
-            spirit.name = spirit.name.replace("_", " ")
-            spirit.name_ko = spirit.name_ko.replace("_", " ")
-        for material in cocktail_detail.materials:
-            material.name = material.name.replace("_", " ")
-            material.name_ko = material.name_ko.replace("_", " ")
-
-    return cocktail_detail
-
-
-def get_cocktail_bookmark_list(db: Session, cocktail_id_list: list):
-    query = db.query(Cocktail).filter(Cocktail.id.in_(cocktail_id_list))
-    total, cocktails = query.count(), query.all()
-    for cocktail in cocktails:
-        cocktail.name = cocktail.name.replace("_", " ")
-        cocktail.name_ko = cocktail.name_ko.replace("_", " ")
-    return total, cocktails
+def get_cocktail_detail_by_name(db: Session, cocktail_name: str):
+    return db.query(Cocktail).filter(Cocktail.name == cocktail_name).first()

@@ -1,49 +1,79 @@
-from pydantic import BaseModel, field_validator
+from typing import List
 
-from api.material.material_schema import Material, MaterialRequest
-from api.spirit.spirit_schema import Spirit, SpiritRequest
+from pydantic import BaseModel, field_validator
+from pydantic_core import PydanticCustomError
+
+from api.material.material_schema import Material, MaterialRequest, MaterialBase
+from api.spirit.spirit_schema import Spirit, SpiritRequest, SpiritBase
 from models import Skill
 
 
-class Cocktail(BaseModel):
-    id: int
+class CocktailBase(BaseModel):
     name: str
     name_ko: str
     skill: Skill
     abv: int
+
+
+class Cocktail(CocktailBase):
+    id: int
     usage_count: int
 
 
 class CocktailDetail(Cocktail):
-    spirits: list[Spirit] = []
-    materials: list[Material] = []
+    spirits: List[Spirit] = []
+    materials: List[Material] = []
 
 
-class CocktailList(BaseModel):
+class CocktailDetailList(BaseModel):
     total: int
-    cocktails: list[CocktailDetail] = []
+    cocktails: List[CocktailDetail] = []
 
 
-class CocktailSpiritList(BaseModel):
+class CocktailSpirits(BaseModel):
     total: int
-    spirits: list[Spirit] = []
+    spirits: List[Spirit] = []
 
 
-class CocktailMaterialList(BaseModel):
+class CocktailMaterials(BaseModel):
     total: int
-    materials: list[Material] = []
+    materials: List[Material] = []
 
 
-class CocktailCreate(BaseModel):
-    name: str
-    name_ko: str
-    skill: Skill
-    abv: int
+class CocktailDetailByName(CocktailBase):
+    spirits: List[SpiritBase] = []
+    materials: List[MaterialBase] = []
 
-    @field_validator('name')
-    def validate_name(cls, v):
-        if len(v) > 50:
-            raise ValueError('칵테일 이름은 20자 이하로 입력해주세요.')
+
+class CocktailListBySpiritMaterial(BaseModel):
+    """
+    Frontend 의 칵테일 탭
+    """
+    total: int
+    items: List[CocktailBase] = []
+
+
+class CocktailCreate(CocktailBase):
+    @field_validator('name', 'name_ko')
+    def validate_cocktail(cls, v):
+        if not v or not v.strip():
+            raise PydanticCustomError("ValueError",
+                                      "빈 값은 허용되지 않습니다.",
+                                      {"value": v})
+        return v
+
+    @field_validator('skill')
+    def skill_check(cls, v):
+        if v.name not in Skill.__members__:
+            raise ValueError('존재하지 않는 스킬입니다.')
+        return v
+
+    @field_validator('abv')
+    def abv_check(cls, v):
+        if type(v) is not int:
+            raise ValueError('숫자만 입력해주세요.')
+        elif v < 0:
+            raise ValueError('0 미만의 숫자는 허용되지 않습니다.')
         return v
 
 
@@ -51,18 +81,9 @@ class CocktailUpdate(CocktailCreate):
     pass
 
 
-class CocktailBySpiritMaterial(BaseModel):
-    total: int
-    items: list[Cocktail] = []
-
-
-class CocktailRequest(BaseModel):
+class CocktailRequest(CocktailCreate):
     """
     GCS에 저장할 칵테일 레시피 JSON의 Cocktail
     """
-    name: str
-    name_ko: str
-    skill: Skill
-    abv: int
-    spirits: list[SpiritRequest] = []
-    materials: list[MaterialRequest] = []
+    spirits: List[SpiritRequest] = []
+    materials: List[MaterialRequest] = []

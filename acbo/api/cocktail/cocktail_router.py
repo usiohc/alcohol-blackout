@@ -12,42 +12,69 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=cocktail_schema.CocktailList)
+@router.get("", response_model=cocktail_schema.CocktailDetailList)
 def cocktail_list(db: Session = Depends(get_db)):
-    total, _cocktail_list = cocktail_crud.get_cocktail_list(db)
+    total, _cocktail_list = cocktail_crud.get_cocktail_list(db=db)
     return {'total': total, 'cocktails': _cocktail_list}
 
 
-@router.get("/{cocktail_id}", response_model=cocktail_schema.CocktailDetail)
+@router.get("/{cocktail_id:int}", response_model=cocktail_schema.CocktailDetail)
 def cocktail_detail(cocktail_id: int, db: Session = Depends(get_db)):
-    cocktail = cocktail_crud.get_cocktail(db, cocktail_id=cocktail_id)
+    cocktail = cocktail_crud.get_cocktail(db=db, cocktail_id=cocktail_id)
     if not cocktail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
     return cocktail
 
 
-@router.get("/{cocktail_id}/spirits", response_model=cocktail_schema.CocktailSpiritList)
+@router.get("/{cocktail_id:int}/spirits", response_model=cocktail_schema.CocktailSpirits)
 def cocktail_spirit_list(cocktail_id: int, db: Session = Depends(get_db)):
+    if cocktail_crud.get_cocktail(db=db, cocktail_id=cocktail_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
+
     total, _cocktail_spirit_list = cocktail_crud.get_cocktail_spirit_list(db, cocktail_id=cocktail_id)
     if not _cocktail_spirit_list:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="등록된 Spirit이 없습니다.")
     return {'total': total, 'spirits': _cocktail_spirit_list}
 
 
-@router.get("/{cocktail_id}/materials", response_model=cocktail_schema.CocktailMaterialList)
+@router.get("/{cocktail_id:int}/materials", response_model=cocktail_schema.CocktailMaterials)
 def cocktail_material_list(cocktail_id: int, db: Session = Depends(get_db)):
+    if cocktail_crud.get_cocktail(db=db, cocktail_id=cocktail_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
+
     total, _cocktail_material_list = cocktail_crud.get_cocktail_material_list(db, cocktail_id=cocktail_id)
     if not _cocktail_material_list:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
     return {'total': total, 'materials': _cocktail_material_list}
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=None)
 def cocktail_create(_cocktail_create: cocktail_schema.CocktailCreate,
                     db: Session = Depends(get_db)):
-    if cocktail_crud.get_exist_cocktail(db=db, cocktail=_cocktail_create):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 Cocktail입니다.")
-    cocktail_crud.create_cocktail(db=db, cocktail=_cocktail_create)
+    """
+    ```json
+    Args:
+        _cocktail_create: {
+            "name": "str", (NotNull)
+            "name_ko": "str", (NotNull)
+            "skill": "Stir", (Enum)
+            "abv": 0, (1 이상)
+        }
+    Returns:
+
+    """
+    return cocktail_crud.create_cocktail(db=db, cocktail=_cocktail_create)
+
+
+@router.put("/{cocktail_id}", status_code=status.HTTP_200_OK, response_model=None)
+def cocktail_update(cocktail_id: int,
+                    _cocktail_update: cocktail_schema.CocktailUpdate,
+                    db: Session = Depends(get_db)):
+    cocktail = cocktail_crud.get_cocktail(db=db, cocktail_id=cocktail_id)
+    if not cocktail:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
+
+    return cocktail_crud.update_cocktail(db=db, db_cocktail=cocktail, cocktail_update=_cocktail_update)
 
 
 @router.delete("/{cocktail_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -57,56 +84,52 @@ def cocktail_delete(cocktail_id: int, db: Session = Depends(get_db)):
     cocktail_crud.delete_cocktail(db=db, cocktail_id=cocktail_id)
 
 
-# 유저 API
-@router.put("/{cocktail_id}", status_code=status.HTTP_200_OK)
-def cocktail_update(cocktail_id: int,
-                    _cocktail_update: cocktail_schema.CocktailUpdate,
-                    db: Session = Depends(get_db)):
-    cocktail = cocktail_crud.get_cocktail(db=db, cocktail_id=cocktail_id)
-    if not cocktail:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
-
-    # 입력받은 Cocktail이 이미 존재하는지 확인
-    if cocktail_crud.get_exist_cocktail(db=db, cocktail=_cocktail_update):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 Cocktail입니다.")
-
-    cocktail_crud.update_cocktail(db=db, db_cocktail=cocktail, cocktail_update=_cocktail_update)
-    return _cocktail_update
-
-
-@router.get("/recipe/{name}", response_model=cocktail_schema.CocktailDetail)
-def cocktail_by_name(name: str,
-                     db: Session = Depends(get_db)):
-    if not name:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="칵테일 이름을 입력해주세요.")
-    name = name.replace(" ", "_")
-
-    cocktail = cocktail_crud.get_cocktail_by_name(db=db, name=name)
-    if not cocktail:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
-    return cocktail
-
-
-@router.get("/", response_model=cocktail_schema.CocktailBySpiritMaterial)
+@router.get("/", response_model=cocktail_schema.CocktailListBySpiritMaterial)
 def cocktail_by_spirit_material(spirits: str | None = Query("", convert_underscores=False),
                                 materials: str | None = Query("", convert_underscores=False),
                                 db: Session = Depends(get_db)):
     """
-    {
-        Args:
-            spirits: [...],
-            materials: [material.type:material.name, ...],
-    }
+    Frontend 칵테일 탭
+    ```json
+        {
+            Args:
+                spirits: (Query parameter, sep=",") default: "" -> 모든 Spirit
+                    "Vodka,Whiskey"
+                materials: (Query parameter, sep=",") default: "" -> 모든 Material
+                    "Liqueur:Triple Sec,Syrup:Simple"
+            Returns:
+                {
+                  "total": 3,
+                  "items": [
+                    {
+                      "name": "Russian Spring Punch",
+                      "name_ko": "러시안 스프링 펀치",
+                      "skill": "Shake",
+                      "abv": 20
+                    },
+                    {
+                      "name": "Long Island Iced Tea",
+                      "name_ko": "롱 아일랜드 아이스 티",
+                      "skill": "Build",
+                      "abv": 20
+                    },
+                    {
+                      "name": "Espresso Martini",
+                      "name_ko": "에스프레소 마티니",
+                      "skill": "Shake",
+                      "abv": 25
+                    }
+                  ]
+                }
+        }
+    ```
     """
     if spirits:
-        spirits = spirits.replace(" ", "")
         spirits = [spirit.capitalize() for spirit in spirits.split(",")]
     if materials:
-        materials = materials.replace(" ", "_")
-        materials = list(map(str, materials.split(","))) # -> ["~:~", "~:~"]
-        # 다음과 같은 형태로 변경 [["~", "~"], ["~", "~"]], capitalize 적용
-        materials = list(map(lambda x: [y.title() for y in x.split(":")], materials))
-
+        materials = [x.split(":") for x in materials.replace(" ", "_").split(
+            ",")]  # [["Liqueur", "Triple_Sec"], ["Liqueur", "Blue_Curacao"], ["Syrup", "Simple_Syrup"]]
+    print(spirits, materials)
     total, cocktails = cocktail_crud.get_cocktail_by_spirit_material(spirits=spirits,
                                                                      materials=materials,
                                                                      db=db)
@@ -115,14 +138,59 @@ def cocktail_by_spirit_material(spirits: str | None = Query("", convert_undersco
     return {"total": total, "items": cocktails}
 
 
-@router.post("/request", status_code=status.HTTP_201_CREATED)
-def cocktail_request(_cocktail_request: cocktail_schema.CocktailRequest):
-    from fastapi.encoders import jsonable_encoder
-    _cocktail_request = jsonable_encoder(_cocktail_request) # str -> dict
-    # print(type(_cocktail_request))
-    # print(_cocktail_request)
+@router.get("/{cocktail_name:str}", response_model=cocktail_schema.CocktailDetailByName)
+def cocktail_detail_by_name(cocktail_name: str,
+                            db: Session = Depends(get_db)):
+    """
+    Frontend 칵테일 상세 페이지
+    """
+    cocktail_name = cocktail_name.replace(" ", "_")
+    cocktail = cocktail_crud.get_cocktail_detail_by_name(db=db, cocktail_name=cocktail_name)
+    if not cocktail:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
+    return cocktail
 
-    filename = _cocktail_request['name_ko'] # GCS에 저장할 파일명
-    if not upload_blob_from_memory(bucket_name="acbo-request_recipes", data=_cocktail_request, destination_blob_name=filename):
+
+@router.post("/request", status_code=status.HTTP_201_CREATED, response_model=None)
+def cocktail_request(_cocktail_request: cocktail_schema.CocktailRequest):
+    """
+        칵테일 레시피 요청, GCS에 저장
+        ```json
+        Args:
+            _cocktail_request: {
+                "name": "str", (NotNull)
+                "name_ko": "str", (NotNull)
+                "skill": "Stir", (Enum)
+                "abv": 0, (1 이상)
+                "spirits": (Nullable) [
+                    {
+                        "type": "Vodka", (Enum)
+                        "name": "str" || "", (Nullable)
+                        "name_ko": "str" || "", (Nullable)
+                        "unit": "ml", (Enum)
+                        "amount": 0, (1 이상)
+                    }
+                ],
+                "materials": (Nullable), default : []
+                    {
+                        "type": "Syrup", (Enum)
+                        "name": "str", (NotNull)
+                        "name_ko": "str", (NotNull)
+                        "unit": "ml", (Enum)
+                        "amount": 0, (1 이상)
+                    }
+                ]
+            }
+        Returns:
+            Null
+        ```
+    """
+    from fastapi.encoders import jsonable_encoder
+    _cocktail_request = jsonable_encoder(_cocktail_request)  # str -> dict
+
+    filename = _cocktail_request['name_ko']  # GCS에 저장할 파일명
+    if not upload_blob_from_memory(bucket_name="acbo-request_recipes", data=_cocktail_request,
+                                   destination_blob_name=filename):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="칵테일 레시피를 요청하는데 실패했습니다."
                                                                                       "관리자에게 문의해주세요.")
+    return None
