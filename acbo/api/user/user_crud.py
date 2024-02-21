@@ -8,17 +8,13 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def create_user(db: Session, user_create: user_schema.UserCreate):
-    try:
-        db_user = User(username=user_create.username,
-                       email=user_create.email,
-                       password=pwd_context.hash(user_create.password))
-        db.add(db_user)
-        db.commit()
-        return True
-    except Exception as e:
-        print("create_user 실패")
-        print(e)
-        return False
+    db_user = User(username=user_create.username,
+                   email=user_create.email,
+                   password=pwd_context.hash(user_create.password))
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return True
 
 
 def get_existing_username(db: Session, username: str):
@@ -33,6 +29,8 @@ def verified_email(db: Session, user: User):
     user.status = 1
     db.add(user)
     db.commit()
+    db.refresh(user)
+    return user
 
 
 def update_username(db: Session, user: User, username: str):
@@ -41,6 +39,7 @@ def update_username(db: Session, user: User, username: str):
     db.add(user)
     db.commit()
     db.refresh(user)
+    return user
 
 
 def update_password(db, user: User, password: str):
@@ -49,6 +48,7 @@ def update_password(db, user: User, password: str):
     db.add(user)
     db.commit()
     db.refresh(user)
+    return user
 
 
 def delete_user(db: Session, user: User):

@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi_mail import ConnectionConfig, MessageSchema, FastMail, MessageType
+from jose import jwt, JWTError
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status
@@ -10,8 +11,6 @@ from api.user import user_crud
 from core.config import MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_SERVER, MAIL_FROM, MAIL_FROM_NAME, SECRET_KEY, \
     ALGORITHM
 from database import get_db
-
-from jose import jwt, JWTError
 
 router = APIRouter(
     prefix="/api/oauth2/token",

@@ -7,18 +7,39 @@ from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from starlette import status
 
-from database import get_db
-from core.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
-from models import datetime, User
 from api.user import user_crud, user_schema
 from api.user.email.email import send_email_token
 from api.user.user_crud import pwd_context
 from api.user.user_schema import oauth2_scheme
+from core.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
+from database import get_db
+from models import datetime, User
 
 router = APIRouter(
     prefix="/api/users",
     tags=["user"],
 )
+
+
+def get_current_user(token: str = Depends(oauth2_scheme),
+                     db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    else:
+        user = user_crud.get_user(db, email=email)
+        if user is None:
+            raise credentials_exception
+        return user
 
 
 @router.post("/register", status_code=status.HTTP_200_OK)
@@ -46,7 +67,7 @@ async def user_register(_user_create: user_schema.UserCreate, db: Session = Depe
 
 @router.post("/login", response_model=user_schema.UserLogin)
 def user_login(form_data: OAuth2PasswordRequestForm = Depends(),
-                           db: Session = Depends(get_db)):
+               db: Session = Depends(get_db)):
     email = form_data.username
     password = form_data.password
 
@@ -56,12 +77,12 @@ def user_login(form_data: OAuth2PasswordRequestForm = Depends(),
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="이메일 혹은 비밀번호가 일치하지 않습니다.",
                             headers={"WWW-Authenticate": "Bearer"},
-        )
+                            )
     if user.status == 0:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="이메일 인증이 완료되지 않았습니다.",
                             headers={"WWW-Authenticate": "Bearer"},
-        )
+                            )
 
     # make access token
     data = {
@@ -76,27 +97,6 @@ def user_login(form_data: OAuth2PasswordRequestForm = Depends(),
         "email": email,
         "username": user.username,
     }
-
-
-def get_current_user(token: str = Depends(oauth2_scheme),
-                     db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    else:
-        user = user_crud.get_user(db, email=email)
-        if user is None:
-            raise credentials_exception
-        return user
 
 
 @router.get("/me", response_model=user_schema.UserBase)

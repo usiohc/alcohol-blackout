@@ -1,6 +1,5 @@
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel, field_validator, EmailStr, Field
-from pydantic_core import PydanticCustomError
 from pydantic_core.core_schema import FieldValidationInfo
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
@@ -20,14 +19,6 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(min_length=8, max_length=20)
     passwordCheck: str = Field(min_length=8, max_length=20)
-
-    # @field_validator('username', 'email', 'password'')
-    # def not_empty(cls, v):
-    #     if not v or not v.strip():
-    #         raise PydanticCustomError("ValueError",
-    #                                   "빈 값은 허용되지 않습니다.",
-    #                                   {"value": v})
-    #     return v
 
     @field_validator('passwordCheck')
     def passwords_match(cls, v, info: FieldValidationInfo):
