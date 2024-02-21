@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from starlette import status
 
@@ -14,11 +14,69 @@ router = APIRouter(
 )
 
 
-@router.post("/{cocktail_id}", status_code=status.HTTP_201_CREATED)
+@router.get("", response_model=bookmark_schema.BookmarkCocktailList)
+def bookmark_cocktail_list(current_user: User = Depends(get_current_user)):
+    """
+    북마크에 등록된 칵테일 리스트를 반환합니다.
+    ```json
+        Args:
+            None
+        Returns: {
+            "total": 5,
+            "items": [
+                {
+                    "name": "Golden Dream",
+                    "name_ko": "골든 드림",
+                    "skill": "Shake",
+                    "abv": 15
+                },
+                {
+                    "name": "Dry Martini",
+                    "name_ko": "드라이 마티니",
+                    "skill": "Stir",
+                    "abv": 30
+                },
+                {
+                    "name": "Stinger",
+                    "name_ko": "스팅어",
+                    "skill": "Stir",
+                    "abv": 26
+                },
+                {
+                    "name": "Daiquiri",
+                    "name_ko": "다이키리",
+                    "skill": "Shake",
+                    "abv": 22
+                },
+                {
+                    "name": "Derby",
+                    "name_ko": "더비",
+                    "skill": "Stir",
+                    "abv": 20
+                }
+            ]
+        }
+    ```
+    """
+    total, cocktails = bookmark_crud.get_bookmarked_cocktail_list(user=current_user)
+    if not cocktails:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="북마크에 등록된 칵테일이 없습니다.")
+    return {'total': total, 'items': cocktails}
+
+
+@router.get("/{cocktail_id}", response_model=bookmark_schema.Bookmarked)
+def bookmarked(cocktail_id: int,
+               current_user: User = Depends(get_current_user)):
+    return {'is_bookmarked': True
+            if bookmark_crud.get_is_bookmarked(user=current_user, cocktail_id=cocktail_id)
+            else False}
+
+
+@router.post("/{cocktail_id}", status_code=status.HTTP_201_CREATED, response_model=None)
 def bookmark_create(cocktail_id: int,
                     db: Session = Depends(get_db),
                     current_user: User = Depends(get_current_user)):
-    bookmark_crud.create_bookmark(db, user=current_user, cocktail_id=cocktail_id)
+    return bookmark_crud.create_bookmark(db, user=current_user, cocktail_id=cocktail_id)
 
 
 @router.delete("/{cocktail_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -26,23 +84,3 @@ def bookmark_delete(cocktail_id: int,
                     db: Session = Depends(get_db),
                     current_user: User = Depends(get_current_user)):
     bookmark_crud.delete_bookmark(db, user=current_user, cocktail_id=cocktail_id)
-
-
-@router.get("", response_model=bookmark_schema.BookmarkCocktailList)
-def bookmark_cocktail_list(db: Session = Depends(get_db),
-                           current_user: User = Depends(get_current_user)):
-    _bookmark_list = bookmark_crud.get_bookmark_list(user=current_user)
-    if not _bookmark_list:
-        return {'total': 0, 'cocktails': []}
-    cocktail_id_list = [bookmark.cocktail_id for bookmark in _bookmark_list]
-    total, cocktails = cocktail_crud.get_cocktail_bookmark_list(db, cocktail_id_list=cocktail_id_list)
-    return {'total': total, 'items': cocktails}
-
-
-@router.get("/{cocktail_id}", response_model=bookmark_schema.Bookmarked)
-def bookmarked(cocktail_id: int,
-                db: Session = Depends(get_db),
-               current_user: User = Depends(get_current_user)):
-    if bookmark_crud.get_is_bookmarked(db, user=current_user, cocktail_id=cocktail_id):
-        return {'is_bookmarked': True}
-    return {'is_bookmarked': False}
