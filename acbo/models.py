@@ -1,11 +1,10 @@
 from enum import Enum as myEnum
 from datetime import datetime as dt, timedelta, timezone
 
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime, event
 from sqlalchemy.orm import relationship
 
-from database import Base
-
+from database import Base, before_insert_listener, after_select_listener, before_update_listener
 
 KST = timezone(timedelta(hours=9))
 def datetime():
@@ -49,8 +48,6 @@ class SpiritType(myEnum):
     Tequila = 'Tequila'
     Whisky = 'Whisky'
     Brandy = 'Brandy'
-    # Liqueur = 'Liqueur'
-    # Beer = 'Beer'
     Wine = 'Wine'
 
 
@@ -68,7 +65,7 @@ class Spirit(Base):
 
     id = Column(Integer, primary_key=True)
     type = Column(Enum(SpiritType), nullable=False)
-    name = Column(String(length=50), nullable=True)  # '' 일 경우 anything, 무엇이든 상관 없음.
+    name = Column(String(length=50), nullable=True)
     name_ko = Column(String(length=50), nullable=True)
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
@@ -120,7 +117,6 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
-    # google_id = Column(Integer, nullable=True)
     username = Column(String(length=20), unique=True, nullable=False)
     email = Column(String(length=100), unique=True, nullable=False)
     password = Column(String(length=255), nullable=False)
@@ -140,3 +136,11 @@ class Bookmark(Base):
 
     created_at = Column(DateTime, default=datetime())
     cocktails = relationship("Cocktail", backref="bookmark")
+
+
+# Spirit, Material, Cocktail 테이블에 대한 이벤트 리스너 등록
+
+for model in [Spirit, Material, Cocktail]:
+    event.listen(model, 'load', after_select_listener)
+    event.listen(model, 'before_insert', before_insert_listener)
+    event.listen(model, 'before_update', before_update_listener)
