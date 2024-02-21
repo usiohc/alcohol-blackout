@@ -1,34 +1,45 @@
-from pydantic import BaseModel, field_validator, Field
+from typing import List, Optional
+
+from pydantic import BaseModel, field_validator
 from pydantic_core import PydanticCustomError
 
 from models import MaterialType, Unit
 
 
-class Material(BaseModel):
-    id: int
+class MaterialBase(BaseModel):
     type: MaterialType
     name: str
     name_ko: str
     unit: Unit
     amount: int
-    cocktail_id: int
+
+
+class Material(MaterialBase):
+    id: int
+    cocktail_id: Optional[int]
 
 
 class MaterialList(BaseModel):
     total: int
-    materials: list[Material] = []
+    materials: List[Material] = []
 
 
-class MaterialCreate(BaseModel):
+class MaterialOmittedUnitAmount(BaseModel):
     type: MaterialType
     name: str
     name_ko: str
-    unit: Unit
-    amount: int
-    cocktail_id: int
 
 
-    @field_validator('type', 'name', 'name_ko', 'unit', 'amount')
+class MaterialListBySpirit(BaseModel):
+    """
+    Frontend 의 재료 탭
+    """
+    total: int
+    items: List[MaterialOmittedUnitAmount] = []
+
+
+class MaterialBaseCreate(MaterialBase):
+    @field_validator('name', 'name_ko')
     def validate_material(cls, v):
         if not v or not v.strip():
             raise PydanticCustomError("ValueError",
@@ -57,26 +68,16 @@ class MaterialCreate(BaseModel):
         return v
 
 
+class MaterialCreate(MaterialBaseCreate):
+    cocktail_id: Optional[int]
+
+
 class MaterialUpdate(MaterialCreate):
     pass
 
 
-class MaterialBySpirit(BaseModel):
-    class MaterialItem(BaseModel):
-        type: MaterialType
-        name: str
-        name_ko: str
-
-    total: int
-    items: list[MaterialItem] = []
-
-
-class MaterialRequest(BaseModel):
+class MaterialRequest(MaterialBaseCreate):
     """
     GCS에 저장할 칵테일 레시피 JSON의 Material
     """
-    type: MaterialType
-    name: str
-    name_ko: str
-    unit: Unit
-    amount: int
+    pass

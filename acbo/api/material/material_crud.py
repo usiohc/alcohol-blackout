@@ -1,4 +1,4 @@
-from sqlalchemy import func, distinct, select
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.material import material_schema
@@ -6,77 +6,54 @@ from models import Material, Spirit
 
 
 def get_material_list(db: Session):
-    _material_list = db.query(Material).order_by(Material.id.asc())
-    total, material_list = _material_list.count(), _material_list.all()
-    return total, material_list
+    material_list = db.query(Material).order_by(Material.type.asc(), Material.name_ko.asc(), Material.name.asc()).all()
+    return len(material_list), material_list
 
 
 def get_material(db: Session, material_id: int):
-    material_detail = db.query(Material).get(material_id)
-    return material_detail
-
-
-def get_exist_material(db: Session, material: material_schema.MaterialCreate):
-    return db.query(Material).filter(Material.type == material.type,
-                                     Material.name == material.name,
-                                     Material.unit == material.unit,
-                                     Material.amount == material.amount,
-                                     Material.cocktail_id == material.cocktail_id).first()
+    return db.query(Material).get(material_id)
 
 
 def create_material(db: Session, material: material_schema.MaterialCreate):
-    db_material = Material(type=material.type,
-                           name=material.name,
-                           unit=material.unit,
-                           amount=material.amount,
-                           cocktail_id=material.cocktail_id)
+    db_material = Material(**material.model_dump())
     db.add(db_material)
     db.commit()
-
-
-def delete_material(db: Session, material_id: int):
-    material_delete = db.query(Material).filter(Material.id == material_id).first()
-    db.delete(material_delete)
-    db.commit()
+    db.refresh(db_material)
+    return db_material
 
 
 def update_material(db: Session,
                     db_material: Material,
                     material_update: material_schema.MaterialUpdate):
-    db_material.type = material_update.type
-    db_material.name = material_update.name
-    db_material.unit = material_update.unit
-    db_material.amount = material_update.amount
+    for key, value in material_update.model_dump().items():
+        setattr(db_material, key, value)
     db.add(db_material)
+    db.commit()
+    db.refresh(db_material)
+    return db_material
+
+
+def delete_material(db: Session, material_id: int):
+    material_delete = db.query(Material).get(material_id)
+    db.delete(material_delete)
     db.commit()
 
 
 def get_material_by_spirit(db: Session,
-                           spirit_type: list):
-    query = db.query(Material.type, Material.name, Material.name_ko)
+                           spirits: list):
+    # TODO: 재료가 많아지면 Material 테이블의 type, name, name_ko 정규화 필요 -> 새로운 테이블 Material_Ingredient 생성 필요
+    if spirits:  # Spirit 테이블에서 SpiritType에 해당하는 cocktail_id를 가져옴
+        spirits = db.query(Spirit.cocktail_id) \
+            .filter(Spirit.type.in_(spirits)) \
+            .group_by(Spirit.cocktail_id) \
+            .having(func.count(Spirit.type) == len(spirits)).all()
+    else:  # spirit_type이 없으면 모든 type, name 반환 (Frontend 에서 기주 선택 X)
+        spirits = db.query(Spirit.id).distinct().all()
 
-    if spirit_type:
-        # 서브 쿼리: Spirit 테이블에서 SpiritType에 해당하는 cocktail_id를 가져옴
-        subquery = db.query(Spirit.cocktail_id)\
-            .filter(Spirit.type.in_(spirit_type))\
-            .group_by(Spirit.cocktail_id)\
-            .having(func.count(Spirit.type) == len(spirit_type))
+    result = set(map(lambda x: x[0], spirits))
 
-        # 메인 쿼리: Material 테이블에서 서브쿼리의 cocktail_id에 해당하는 type, name을 가져옴 | Groupby 로 중복 제거
-        query = query.filter(Material.cocktail_id.in_(subquery))\
-                     .group_by(Material.type, Material.name, Material.name_ko)
-    else: # spirit_type이 없으면 모든 type, name 반환
-        query = query.group_by(Material.type, Material.name, Material.name_ko)
+    materials = db.query(Material.type, Material.name, Material.name_ko).distinct() \
+        .filter(Material.cocktail_id.in_(result)) \
+        .order_by(Material.type.asc(), Material.name_ko.asc(), Material.name.asc()).all()
 
-    query = query.order_by(Material.type.asc(), Material.name.asc())
-    # 쿼리 실행 및 결과 반환
-    total, results = query.count(), query.all()
-
-    materials = []
-    if results:
-        for row in results:
-            materials.append({"type": row.type.value,
-                              "name": row.name.replace("_", " "),
-                              "name_ko": row.name_ko.replace("_", " ")})
-
-    return total, materials
+    return len(materials), materials

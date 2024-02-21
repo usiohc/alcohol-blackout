@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from starlette import status
 
+from api.cocktail import cocktail_crud
 from api.material import material_crud, material_schema
 from database import get_db
 from models import SpiritType
@@ -18,7 +19,7 @@ def material_list(db: Session = Depends(get_db)):
     return {'total': total, 'materials': _material_list}
 
 
-@router.get("/{material_id}", response_model=material_schema.Material)
+@router.get("/{material_id:int}", response_model=material_schema.Material)
 def material_detail(material_id: int, db: Session = Depends(get_db)):
     material = material_crud.get_material(db=db, material_id=material_id)
     if not material:
@@ -26,12 +27,43 @@ def material_detail(material_id: int, db: Session = Depends(get_db)):
     return material
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=None)
 def material_create(_material_create: material_schema.MaterialCreate,
                     db: Session = Depends(get_db)):
-    if material_crud.get_exist_material(db=db, material=_material_create):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 Material입니다.")
-    material_crud.create_material(db=db, material=_material_create)
+    """
+    ```json
+    Args:
+        _material_create: {
+            "type": "Spirit", (Enum)
+            "name": "str", (NotNull)
+            "name_ko": "str", (NotNull)
+            "unit": "ml", (Enum)
+            "amount": 0, (1 이상)
+            "cocktail_id": Optional[int]
+        }
+    Returns:
+        None
+    ```
+    """
+    if not _material_create.cocktail_id:
+        _material_create.cocktail_id = None
+    return material_crud.create_material(db=db, material=_material_create)
+
+
+@router.put("/{material_id}", status_code=status.HTTP_200_OK, response_model=None)
+def material_update(material_id: int,
+                    _material_update: material_schema.MaterialUpdate,
+                    db: Session = Depends(get_db)):
+    material = material_crud.get_material(db=db, material_id=material_id)
+    if not material:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Material입니다.")
+
+    if not _material_update.cocktail_id:
+        _material_update.cocktail_id = None
+    elif cocktail_crud.get_cocktail(db=db, cocktail_id=_material_update.cocktail_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
+
+    return material_crud.update_material(db=db, db_material=material, material_update=_material_update)
 
 
 @router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -41,34 +73,43 @@ def material_delete(material_id: int, db: Session = Depends(get_db)):
     material_crud.delete_material(db=db, material_id=material_id)
 
 
-@router.put("/{material_id}", status_code=status.HTTP_200_OK)
-def material_update(material_id: int,
-                    _material_update: material_schema.MaterialUpdate,
-                    db: Session = Depends(get_db)):
-    material = material_crud.get_material(db=db, material_id=material_id)
-    if not material:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Material입니다.")
-
-    # 입력받은 Material이 이미 존재하는지 확인
-    if material_crud.get_exist_material(db=db, material=_material_update):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="이미 존재하는 Material입니다.")
-
-    material_crud.update_material(db=db, db_material=material, material_update=_material_update)
-    return _material_update
-
-
-# 재료 탭
-@router.get("/", response_model=material_schema.MaterialBySpirit)
-def material_by_spirit(spirit_type: str = Query("", convert_underscores=False),
+@router.get("/", response_model=material_schema.MaterialListBySpirit)
+def material_by_spirit(spirits: str = Query("", convert_underscores=False),
                        db: Session = Depends(get_db)):
-    _spirit_type = []
-    if spirit_type:
-        _spirit_type = [spirit.capitalize() for spirit in spirit_type.split(",")]
-    if not all(spirit_type in SpiritType.__members__ for spirit_type in _spirit_type):
+    """
+    ```json
+    Args:
+        spirits: (Query parameter, sep=",") default: "" -> 모든 Material 을 반환
+             "Vodka,Whiskey"
+    Returns:
+        {
+            "total": 20,
+            "items": [
+                {
+                    "type": "Liqueur",
+                    "name": "Absinthe",
+                    "name_ko": "압생트",
+                },
+                {
+                    "type": "Liqueur"
+                    "name": "Angostura Bitters",
+                    "name_ko": "앙고스투라 비터스",
+                },
+                ...
+            }
+    ```
+    """
+    # "Vodka,Whiskey" -> ["Vodka", "Whiskey"] || "" -> []
+    _spirits = [s.capitalize() for s in spirits.split(",")] if spirits else []
+    if _spirits and not all(s in SpiritType.__members__ for s in _spirits):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="올바르지 않은 Spirit Type 입니다.")
 
-    total, materials = material_crud.get_material_by_spirit(spirit_type=_spirit_type, db=db)
-
+    total, materials = material_crud.get_material_by_spirit(spirits=_spirits, db=db)
     if not materials:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material을 찾을 수 없습니다.")
+
+    materials = [material_schema.MaterialOmittedUnitAmount(
+        type=material.type.value,
+        name=material.name.replace("_", " "),
+        name_ko=material.name_ko.replace("_", " ")) for material in materials]
     return {"total": total, "items": materials}
