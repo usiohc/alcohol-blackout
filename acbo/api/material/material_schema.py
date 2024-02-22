@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel, field_validator
 from pydantic_core import PydanticCustomError
 
-from models import MaterialType, Unit
+from enums import Unit, MaterialType
 
 
 class MaterialBase(BaseModel):

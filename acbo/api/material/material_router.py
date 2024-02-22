@@ -5,7 +5,7 @@ from starlette import status
 from api.cocktail import cocktail_crud
 from api.material import material_crud, material_schema
 from database import get_db
-from models import SpiritType
+from enums import SpiritType
 
 router = APIRouter(
     prefix="/api/materials",

@@ -1,63 +1,16 @@
-from enum import Enum as myEnum
 from datetime import datetime as dt, timedelta, timezone
 
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime, event
 from sqlalchemy.orm import relationship
 
 from database import Base, before_insert_listener, after_select_listener, before_update_listener
+from enums import Skill, Unit, SpiritType, MaterialType
 
 KST = timezone(timedelta(hours=9))
 def datetime():
     return dt.now(KST)
 def datetime_date():
     return dt.now(KST).date()
-
-
-class Skill(myEnum):
-    Build = 'Build'
-    Stir = 'Stir'
-    Shake = 'Shake'
-    Float = 'Float'
-    Blend = 'Blend'
-
-
-class Unit(myEnum):
-    """
-    ml: 밀리리터
-    tsp: 티스푼
-    dash: 5방울, 1ml
-    drop: 방울, 0.2ml
-    pinch: 꼬집
-    Full_up: 취향껏
-    piece: 조각
-    """
-
-    ml = 'ml'
-    tsp = 'tsp'
-    dash = 'dash'
-    drop = 'drop'
-    pinch = 'pinch'
-    Full_up = 'Full_up'  # Full_up -> amount = 0
-    piece = 'piece'
-
-
-class SpiritType(myEnum):
-    Vodka = 'Vodka'
-    Gin = 'Gin'
-    Rum = 'Rum'
-    Tequila = 'Tequila'
-    Whisky = 'Whisky'
-    Brandy = 'Brandy'
-    Wine = 'Wine'
-
-
-class MaterialType(myEnum):
-    Liqueur = 'Liqueur'
-    Syrup = 'Syrup'
-    Juice = 'Juice'
-    Soda = 'Soda'
-    Garnish = 'Garnish'
-    Etc = 'Etc'
 
 
 class Spirit(Base):
@@ -139,7 +92,6 @@ class Bookmark(Base):
 
 
 # Spirit, Material, Cocktail 테이블에 대한 이벤트 리스너 등록
-
 for model in [Spirit, Material, Cocktail]:
     event.listen(model, 'load', after_select_listener)
     event.listen(model, 'before_insert', before_insert_listener)

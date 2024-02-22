@@ -5,7 +5,7 @@ from pydantic_core import PydanticCustomError
 
 from api.material.material_schema import Material, MaterialRequest, MaterialBase
 from api.spirit.spirit_schema import Spirit, SpiritRequest, SpiritBase
-from models import Skill
+from enums import Skill
 
 
 class CocktailBase(BaseModel):

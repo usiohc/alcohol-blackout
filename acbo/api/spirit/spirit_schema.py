@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, field_validator
 
-from models import SpiritType, Unit
+from enums import Unit, SpiritType
 
 
 class SpiritBase(BaseModel):
