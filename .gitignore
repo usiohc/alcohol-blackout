@@ -15,6 +15,7 @@ alembic.ini
 init_data.py
 launch.json
 *.txt
+pytest.ini
 
 
 # python
