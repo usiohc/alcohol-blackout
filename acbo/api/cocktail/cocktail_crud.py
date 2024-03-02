@@ -49,9 +49,9 @@ def delete_cocktail(db: Session, cocktail_id: int):
     db.commit()
 
 
-def get_cocktail_by_spirit_material(spirits: list,
-                                    materials: list,
-                                    db: Session):
+def get_cocktail_by_spirit_material(db: Session,
+                                    spirits: list,
+                                    materials: list):
     if spirits:
         # 서브 쿼리:
         subquery = db.query(Spirit.cocktail_id) \
@@ -65,7 +65,6 @@ def get_cocktail_by_spirit_material(spirits: list,
 
     # spirits = [(1,), ...] | [] -> result = (1, ...) | ()
     result = set(map(lambda x: x[0], spirits))
-    print(result)
 
     if materials:
         for material_type, material_name in materials:
@@ -74,8 +73,8 @@ def get_cocktail_by_spirit_material(spirits: list,
                 .group_by(Material.cocktail_id).all()
             result = result & set(map(lambda x: x[0], _materials))  # _materials = [(1,), ...]
 
-    cocktails = db.query(Cocktail).filter(Cocktail.id.in_(result)).order_by(Cocktail.name_ko.asc(),
-                                                                            Cocktail.name.asc()).all()
+    cocktails = db.query(Cocktail).filter(Cocktail.id.in_(result))\
+                  .order_by(Cocktail.name_ko.asc(),Cocktail.name.asc()).all()
 
     return len(cocktails), cocktails
 

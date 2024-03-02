@@ -25,9 +25,9 @@ class CocktailDetail(Cocktail):
     materials: List[Material] = []
 
 
-class CocktailDetailList(BaseModel):
+class CocktailList(BaseModel):
     total: int
-    cocktails: List[CocktailDetail] = []
+    cocktails: List[Cocktail] = []
 
 
 class CocktailSpirits(BaseModel):
@@ -40,7 +40,7 @@ class CocktailMaterials(BaseModel):
     materials: List[Material] = []
 
 
-class CocktailDetailByName(CocktailBase):
+class CocktailDetailByName(Cocktail):
     spirits: List[SpiritBase] = []
     materials: List[MaterialBase] = []
 

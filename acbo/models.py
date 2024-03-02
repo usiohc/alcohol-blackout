@@ -3,7 +3,7 @@ from datetime import datetime as dt, timedelta, timezone
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime, event
 from sqlalchemy.orm import relationship
 
-from database import Base, before_insert_listener, after_select_listener, before_update_listener
+from db.database import Base, after_select_listener, before_insert_listener, before_update_listener
 from enums import Skill, Unit, SpiritType, MaterialType
 
 KST = timezone(timedelta(hours=9))
@@ -23,7 +23,6 @@ class Spirit(Base):
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
-    # cocktail = relationship("Cocktail", backref="spirits")
 
 
 class Material(Base):
@@ -36,7 +35,6 @@ class Material(Base):
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
     cocktail_id = Column(Integer, ForeignKey('cocktail.id'), nullable=True)
-    # cocktail = relationship("Cocktail", backref="materials")
 
 
 class Cocktail(Base):

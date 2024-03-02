@@ -4,7 +4,7 @@ from starlette import status
 
 from api.cocktail import cocktail_crud
 from api.material import material_crud, material_schema
-from database import get_db
+from db.database import get_db
 from enums import SpiritType
 
 router = APIRouter(
@@ -47,7 +47,9 @@ def material_create(_material_create: material_schema.MaterialCreate,
     """
     if not _material_create.cocktail_id:
         _material_create.cocktail_id = None
-    return material_crud.create_material(db=db, material=_material_create)
+    if not material_crud.create_material(db=db, material=_material_create):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Material을 생성할 수 없습니다.")
+    return None
 
 
 @router.put("/{material_id}", status_code=status.HTTP_200_OK, response_model=None)
@@ -63,7 +65,9 @@ def material_update(material_id: int,
     elif cocktail_crud.get_cocktail(db=db, cocktail_id=_material_update.cocktail_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
 
-    return material_crud.update_material(db=db, db_material=material, material_update=_material_update)
+    if not material_crud.update_material(db=db, db_material=material, material_update=_material_update):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Material을 수정할 수 없습니다.")
+    return None
 
 
 @router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -107,9 +111,4 @@ def material_by_spirit(spirits: str = Query("", convert_underscores=False),
     total, materials = material_crud.get_material_by_spirit(spirits=_spirits, db=db)
     if not materials:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Material을 찾을 수 없습니다.")
-
-    materials = [material_schema.MaterialOmittedUnitAmount(
-        type=material.type.value,
-        name=material.name.replace("_", " "),
-        name_ko=material.name_ko.replace("_", " ")) for material in materials]
     return {"total": total, "items": materials}

@@ -14,7 +14,7 @@ def create_user(db: Session, user_create: user_schema.UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return True
+    return db_user
 
 
 def get_existing_username(db: Session, username: str):

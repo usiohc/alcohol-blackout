@@ -10,7 +10,7 @@ from starlette import status
 from api.user import user_crud
 from core.config import MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT, MAIL_SERVER, MAIL_FROM, MAIL_FROM_NAME, SECRET_KEY, \
     ALGORITHM
-from database import get_db
+from db.database import get_db
 
 router = APIRouter(
     prefix="/api/oauth2/token",
@@ -30,6 +30,7 @@ conf = ConnectionConfig(
     VALIDATE_CERTS=True,
     TEMPLATE_FOLDER=Path(__file__).parent / "template",
 )
+fm = FastMail(conf)
 
 
 class Token(BaseModel):
@@ -48,13 +49,11 @@ async def send_email_token(access_token: str,
             template_body=body,
             subtype=MessageType.html)
 
-        fm = FastMail(conf)
         await fm.send_message(message, template_name="email.html")
-        return True
+        return body
     except Exception as e:
         print(e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail="인증 메일 전송에 실패했습니다.")
+        return None
 
 
 def _verify_email(db: Session,
@@ -81,11 +80,10 @@ def _verify_email(db: Session,
                                 detail="이미 인증된 이메일입니다.")
 
         try:
-            user_crud.verified_email(db, user=user)
-            return True
+            return user_crud.verified_email(db, user=user)
         except Exception as e:
             print(e)
-            return False
+            return None
 
 
 @router.post("/", status_code=status.HTTP_200_OK)

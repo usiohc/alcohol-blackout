@@ -3,9 +3,8 @@ from sqlalchemy.orm import Session
 from starlette import status
 
 from api.bookmark import bookmark_schema, bookmark_crud
-from api.cocktail import cocktail_crud
 from api.user.user_router import get_current_user
-from database import get_db
+from db.database import get_db
 from models import User
 
 router = APIRouter(
@@ -76,7 +75,9 @@ def bookmarked(cocktail_id: int,
 def bookmark_create(cocktail_id: int,
                     db: Session = Depends(get_db),
                     current_user: User = Depends(get_current_user)):
-    return bookmark_crud.create_bookmark(db, user=current_user, cocktail_id=cocktail_id)
+    if not bookmark_crud.create_bookmark(db, user=current_user, cocktail_id=cocktail_id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="북마크 등록에 실패했습니다.")
+    return None
 
 
 @router.delete("/{cocktail_id}", status_code=status.HTTP_204_NO_CONTENT)

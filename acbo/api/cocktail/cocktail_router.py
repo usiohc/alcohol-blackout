@@ -4,7 +4,7 @@ from starlette import status
 
 from api.cocktail import cocktail_crud, cocktail_schema
 from cloud_storage import upload_blob_from_memory
-from database import get_db
+from db.database import get_db
 
 router = APIRouter(
     prefix="/api/cocktails",
@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=cocktail_schema.CocktailDetailList)
+@router.get("", response_model=cocktail_schema.CocktailList)
 def cocktail_list(db: Session = Depends(get_db)):
     total, _cocktail_list = cocktail_crud.get_cocktail_list(db=db)
     return {'total': total, 'cocktails': _cocktail_list}
@@ -63,7 +63,9 @@ def cocktail_create(_cocktail_create: cocktail_schema.CocktailCreate,
     Returns:
 
     """
-    return cocktail_crud.create_cocktail(db=db, cocktail=_cocktail_create)
+    if not cocktail_crud.create_cocktail(db=db, cocktail=_cocktail_create):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Cocktail을 생성하는데 실패했습니다.")
+    return None
 
 
 @router.put("/{cocktail_id}", status_code=status.HTTP_200_OK, response_model=None)
@@ -74,7 +76,9 @@ def cocktail_update(cocktail_id: int,
     if not cocktail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
 
-    return cocktail_crud.update_cocktail(db=db, db_cocktail=cocktail, cocktail_update=_cocktail_update)
+    if not cocktail_crud.update_cocktail(db=db, db_cocktail=cocktail, cocktail_update=_cocktail_update):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Cocktail을 수정하는데 실패했습니다.")
+    return None
 
 
 @router.delete("/{cocktail_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -94,7 +98,7 @@ def cocktail_by_spirit_material(spirits: str | None = Query("", convert_undersco
         {
             Args:
                 spirits: (Query parameter, sep=",") default: "" -> 모든 Spirit
-                    "Vodka,Whiskey"
+                    "Vodka,Whisky"
                 materials: (Query parameter, sep=",") default: "" -> 모든 Material
                     "Liqueur:Triple Sec,Syrup:Simple"
             Returns:
@@ -125,11 +129,11 @@ def cocktail_by_spirit_material(spirits: str | None = Query("", convert_undersco
     ```
     """
     if spirits:
+        # ["Vodka", "Whisky"]
         spirits = [spirit.capitalize() for spirit in spirits.split(",")]
     if materials:
-        materials = [x.split(":") for x in materials.replace(" ", "_").split(
-            ",")]  # [["Liqueur", "Triple_Sec"], ["Liqueur", "Blue_Curacao"], ["Syrup", "Simple_Syrup"]]
-    print(spirits, materials)
+        # [["Liqueur", "Triple_Sec"], ["Liqueur", "Blue_Curacao"], ["Syrup", "Simple_Syrup"]]
+        materials = [x.split(":") for x in materials.replace(" ", "_").split(",")]
     total, cocktails = cocktail_crud.get_cocktail_by_spirit_material(spirits=spirits,
                                                                      materials=materials,
                                                                      db=db)

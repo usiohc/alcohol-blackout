@@ -4,7 +4,7 @@ from starlette import status
 
 from api.cocktail import cocktail_crud
 from api.spirit import spirit_schema, spirit_crud
-from database import get_db
+from db.database import get_db
 
 router = APIRouter(
     prefix="/api/spirits",
@@ -49,7 +49,9 @@ def spirit_create(_spirit_create: spirit_schema.SpiritCreate,
     elif cocktail_crud.get_cocktail(db=db, cocktail_id=_spirit_create.cocktail_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="cocktail_id에 해당하는 칵테일를 찾을 수 없습니다.")
 
-    return spirit_crud.create_spirit(db=db, spirit=_spirit_create)
+    if not spirit_crud.create_spirit(db=db, spirit=_spirit_create):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Spirit을 생성할 수 없습니다.")
+    return None
 
 
 @router.put("/{spirit_id}", status_code=status.HTTP_200_OK, response_model=None)
@@ -65,7 +67,9 @@ def spirit_update(spirit_id: int,
     elif cocktail_crud.get_cocktail(db=db, cocktail_id=_spirit_update.cocktail_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="cocktail_id에 해당하는 칵테일를 찾을 수 없습니다.")
 
-    return spirit_crud.update_spirit(db=db, db_spirit=spirit, spirit_update=_spirit_update)
+    if not spirit_crud.update_spirit(db=db, db_spirit=spirit, spirit_update=_spirit_update):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Spirit을 수정할 수 없습니다.")
+    return None
 
 
 @router.delete("/{spirit_id}", status_code=status.HTTP_204_NO_CONTENT)

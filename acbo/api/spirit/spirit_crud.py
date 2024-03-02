@@ -12,7 +12,6 @@ def get_spirit_list(db: Session):
 def get_spirit(db: Session, spirit_id: int):
     return db.query(Spirit).get(spirit_id)
 
-
 def create_spirit(db: Session, spirit: spirit_schema.SpiritCreate):
     db_spirit = Spirit(**spirit.model_dump())
     db.add(db_spirit)
