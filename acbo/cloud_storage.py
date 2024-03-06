@@ -1,7 +1,8 @@
-from google.cloud import storage
-from models import datetime_date
 from json import dumps
 
+from google.cloud import storage
+
+from models import datetime_date
 
 storage_client = storage.Client()
 

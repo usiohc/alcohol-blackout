@@ -1,9 +1,8 @@
+from sqlalchemy import MetaData
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base, class_mapper
-from sqlalchemy import MetaData
 
 from core.config import SQLALCHEMY_DATABASE_URL
-
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,

@@ -6,6 +6,7 @@
 migrations
 /db
 /db_*
+key
 .dockerignore
 *.sh
 *.pem
@@ -17,6 +18,7 @@ init_data.py
 launch.json
 *.txt
 pytest.ini
+/frontend/*/*.png
 
 
 # python
@@ -36,7 +38,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+#lib/
 lib64/
 parts/
 sdist/
@@ -180,3 +182,4 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+/frontend/src/assets/favicon.png
