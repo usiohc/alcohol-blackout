@@ -28,6 +28,7 @@ def make_access_token(email: str, exp: int):
     }
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
+
 def get_current_user(token: str = Depends(oauth2_scheme),
                      db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -39,17 +40,26 @@ def get_current_user(token: str = Depends(oauth2_scheme),
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("email")
         if email is None:
-            print(1)
             raise credentials_exception
     except JWTError:
-        print(2)
         raise credentials_exception
     else:
         user = user_crud.get_user(db, email=email)
         if user is None:
-            print(3)
-            raise credentials_exception
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="찾을 수 없는 사용자입니다.")
         return user
+
+
+def get_current_active_user(current_user: User = Depends(get_current_user)):
+    if current_user.status == 0:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="인증되지 않은 사용자입니다.")
+    return current_user
+
+
+def get_current_superuser(current_user: User = Depends(get_current_user)):
+    if current_user.status != 2:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="관리자 권한이 없습니다.")
+    return current_user
 
 
 @router.post("/register", status_code=status.HTTP_200_OK)
@@ -104,14 +114,14 @@ def user_login(form_data: OAuth2PasswordRequestForm = Depends(),
 
 
 @router.get("/me", response_model=user_schema.UserBase)
-def user_me(current_user: User = Depends(get_current_user)):
+def user_me(current_user: User = Depends(get_current_active_user)):
     return current_user
 
 
 @router.patch("/username", status_code=status.HTTP_200_OK)
 def user_update_username(_user_update_username: user_schema.UserUpdateUsername,
                          db: Session = Depends(get_db),
-                         current_user: User = Depends(get_current_user)):
+                         current_user: User = Depends(get_current_active_user)):
     username = _user_update_username.username
     if user_crud.get_existing_username(db, username):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
@@ -125,7 +135,7 @@ def user_update_username(_user_update_username: user_schema.UserUpdateUsername,
 @router.patch("/password", status_code=status.HTTP_200_OK)
 def user_update_password(_user_update_password: user_schema.UserUpdatePassword,
                          db: Session = Depends(get_db),
-                         current_user: User = Depends(get_current_user)):
+                         current_user: User = Depends(get_current_active_user)):
     password = _user_update_password.password
     if pwd_context.verify(password, current_user.password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
@@ -139,6 +149,6 @@ def user_update_password(_user_update_password: user_schema.UserUpdatePassword,
 
 @router.delete("", status_code=status.HTTP_200_OK)
 def user_delete(db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)):
+                current_user: User = Depends(get_current_active_user)):
     user_crud.delete_user(db, user=current_user)
     return {"message": "회원탈퇴가 완료되었습니다."}

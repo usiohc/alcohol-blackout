@@ -34,7 +34,7 @@ class Material(Base):
     name_ko = Column(String(length=50), nullable=False)
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
-    cocktail_id = Column(Integer, ForeignKey('cocktail.id'), nullable=True)
+    cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
 
 
 class Cocktail(Base):

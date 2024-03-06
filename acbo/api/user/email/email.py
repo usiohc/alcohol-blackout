@@ -52,7 +52,6 @@ async def send_email_token(access_token: str,
         await fm.send_message(message, template_name="email.html")
         return body
     except Exception as e:
-        print(e)
         return None
 
 
@@ -82,7 +81,6 @@ def _verify_email(db: Session,
         try:
             return user_crud.verified_email(db, user=user)
         except Exception as e:
-            print(e)
             return None
 
 
