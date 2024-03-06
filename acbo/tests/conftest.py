@@ -1,5 +1,3 @@
-import os.path
-
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -10,9 +8,8 @@ from api.cocktail import cocktail_schema, cocktail_crud
 from api.material import material_schema, material_crud
 from api.spirit import spirit_schema, spirit_crud
 from api.user import user_crud, user_schema
-
-from main import app
 from db.database import Base, get_db
+from main import app
 
 
 class TestSession(Session):
@@ -101,6 +98,7 @@ def material(db):
     }
     return models.Material(**material_data)
 
+
 @pytest.fixture(scope="function")
 def recipe(db):
     from tests.test_data import cocktail_data, spirit_data, material_data
@@ -157,6 +155,12 @@ def user(db):
 def verified_user(db, user):
     _verified_user = user_crud.verified_email(db, user)
     return _verified_user
+
+
+@pytest.fixture(scope="function")
+def superuser(db, user):
+    _superuser = user_crud.superuser(db, user)
+    return _superuser
 
 
 @pytest.fixture(scope="function")

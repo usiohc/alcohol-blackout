@@ -1,3 +1,6 @@
+from tests.test_data import user_data
+
+
 def test_cocktail_list(client, cocktail):
     response = client.get("/api/cocktails")
     res = response.json()
@@ -51,32 +54,56 @@ def test_cocktail_material_list(client, recipe):
     assert res['materials'][0]['cocktail_id'] == recipe.materials[0].cocktail_id
 
 
-def test_cocktail_create(client):
+def test_cocktail_create(client, superuser):
+    response = client.post("/api/users/login",
+                           data={"username": superuser.email, "password": user_data["password"]},
+                           headers={"Content-Type": "application/x-www-form-urlencoded"})
+    _superuser = response.json()
+    assert response.status_code == 200
+    assert _superuser['access_token'] is not None
+
     cocktail_data = {
         "name": "Test Cocktail",
         "name_ko": "테스트 칵테일",
         "skill": "Float",
         "abv": 15
     }
-    response = client.post("/api/cocktails", json=cocktail_data)
+    response = client.post("/api/cocktails", json=cocktail_data,
+                           headers={"Authorization": f"Bearer {_superuser['access_token']}"})
     assert response.status_code == 201
     assert response.json() is None
 
 
-def test_cocktail_update(client, cocktail):
+def test_cocktail_update(client, cocktail, superuser):
+    response = client.post("/api/users/login",
+                           data={"username": superuser.email, "password": user_data["password"]},
+                           headers={"Content-Type": "application/x-www-form-urlencoded"})
+    _superuser = response.json()
+    assert response.status_code == 200
+    assert _superuser['access_token'] is not None
+
     updated_data = {
         "name": "Updated Cocktail",
         "name_ko": "업데이트된 칵테일",
         "skill": "Build",
         "abv": 10
     }
-    response = client.put(f"/api/cocktails/{cocktail.id}", json=updated_data)
+    response = client.put(f"/api/cocktails/{cocktail.id}", json=updated_data,
+                          headers={"Authorization": f"Bearer {_superuser['access_token']}"})
     assert response.status_code == 200
     assert response.json() is None
 
 
-def test_cocktail_delete(client, cocktail):
-    response = client.delete(f"/api/cocktails/{cocktail.id}")
+def test_cocktail_delete(client, cocktail, superuser):
+    response = client.post("/api/users/login",
+                           data={"username": superuser.email, "password": user_data["password"]},
+                           headers={"Content-Type": "application/x-www-form-urlencoded"})
+    _superuser = response.json()
+    assert response.status_code == 200
+    assert _superuser['access_token'] is not None
+
+    response = client.delete(f"/api/cocktails/{cocktail.id}",
+                             headers={"Authorization": f"Bearer {_superuser['access_token']}"})
     assert response.status_code == 204
 
 

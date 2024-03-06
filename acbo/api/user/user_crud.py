@@ -54,3 +54,11 @@ def update_password(db, user: User, password: str):
 def delete_user(db: Session, user: User):
     db.delete(user)
     db.commit()
+
+
+def superuser(db: Session, user: User):
+    user.status = 2
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user

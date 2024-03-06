@@ -1,3 +1,6 @@
+from tests.test_data import user_data
+
+
 def test_material_list(client, material):
     response = client.get("/api/materials")
     res = response.json()
@@ -24,7 +27,14 @@ def test_material_detail(client, material):
     assert res['cocktail_id'] == material.cocktail_id
 
 
-def test_material_create(client):
+def test_material_create(client, superuser):
+    response = client.post("/api/users/login",
+                           data={"username": superuser.email, "password": user_data["password"]},
+                           headers={"Content-Type": "application/x-www-form-urlencoded"})
+    _superuser = response.json()
+    assert response.status_code == 200
+    assert _superuser['access_token'] is not None
+
     material_data = {
         "type": "Liqueur",
         "name": "Test Liqueur",
@@ -33,12 +43,20 @@ def test_material_create(client):
         "amount": 10,
         "cocktail_id": None
     }
-    response = client.post("/api/materials", json=material_data)
+    response = client.post("/api/materials", json=material_data,
+                           headers={"Authorization": f"Bearer {_superuser['access_token']}"})
     assert response.status_code == 201
     assert response.json() is None
 
 
-def test_material_update(client, material):
+def test_material_update(client, material, superuser):
+    response = client.post("/api/users/login",
+                           data={"username": superuser.email, "password": user_data["password"]},
+                           headers={"Content-Type": "application/x-www-form-urlencoded"})
+    _superuser = response.json()
+    assert response.status_code == 200
+    assert _superuser['access_token'] is not None
+
     updated_data = {
         "type": "Juice",
         "name": "Updated Juice",
@@ -47,14 +65,24 @@ def test_material_update(client, material):
         "amount": 40,
         "cocktail_id": None
     }
-    response = client.put(f"/api/materials/{material.id}", json=updated_data)
+    response = client.put(f"/api/materials/{material.id}", json=updated_data,
+                          headers={"Authorization": f"Bearer {_superuser['access_token']}"})
     assert response.status_code == 200
     assert response.json() is None
 
 
-def test_material_delete(client, material):
-    response = client.delete(f"/api/materials/{material.id}")
+def test_material_delete(client, material, superuser):
+    response = client.post("/api/users/login",
+                           data={"username": superuser.email, "password": user_data["password"]},
+                           headers={"Content-Type": "application/x-www-form-urlencoded"})
+    _superuser = response.json()
+    assert response.status_code == 200
+    assert _superuser['access_token'] is not None
+
+    response = client.delete(f"/api/materials/{material.id}",
+                             headers={"Authorization": f"Bearer {_superuser['access_token']}"})
     assert response.status_code == 204
+
 
 
 def test_material_by_spirit(client, recipe):
