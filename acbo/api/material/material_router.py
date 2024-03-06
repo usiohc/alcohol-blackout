@@ -4,8 +4,10 @@ from starlette import status
 
 from api.cocktail import cocktail_crud
 from api.material import material_crud, material_schema
+from api.user.user_router import get_current_superuser
 from db.database import get_db
 from enums import SpiritType
+from models import User
 
 router = APIRouter(
     prefix="/api/materials",
@@ -29,7 +31,8 @@ def material_detail(material_id: int, db: Session = Depends(get_db)):
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=None)
 def material_create(_material_create: material_schema.MaterialCreate,
-                    db: Session = Depends(get_db)):
+                    db: Session = Depends(get_db),
+                    superuser: User = Depends(get_current_superuser)):
     """
     ```json
     Args:
@@ -55,7 +58,8 @@ def material_create(_material_create: material_schema.MaterialCreate,
 @router.put("/{material_id}", status_code=status.HTTP_200_OK, response_model=None)
 def material_update(material_id: int,
                     _material_update: material_schema.MaterialUpdate,
-                    db: Session = Depends(get_db)):
+                    db: Session = Depends(get_db),
+                    superuser: User = Depends(get_current_superuser)):
     material = material_crud.get_material(db=db, material_id=material_id)
     if not material:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Material입니다.")
@@ -71,7 +75,9 @@ def material_update(material_id: int,
 
 
 @router.delete("/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
-def material_delete(material_id: int, db: Session = Depends(get_db)):
+def material_delete(material_id: int,
+                    db: Session = Depends(get_db),
+                    superuser: User = Depends(get_current_superuser)):
     if not material_crud.get_material(db=db, material_id=material_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Material입니다.")
     material_crud.delete_material(db=db, material_id=material_id)

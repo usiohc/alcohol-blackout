@@ -3,8 +3,10 @@ from sqlalchemy.orm import Session
 from starlette import status
 
 from api.cocktail import cocktail_crud, cocktail_schema
+from api.user.user_router import get_current_superuser
 from cloud_storage import upload_blob_from_memory
 from db.database import get_db
+from models import User
 
 router = APIRouter(
     prefix="/api/cocktails",
@@ -50,7 +52,8 @@ def cocktail_material_list(cocktail_id: int, db: Session = Depends(get_db)):
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=None)
 def cocktail_create(_cocktail_create: cocktail_schema.CocktailCreate,
-                    db: Session = Depends(get_db)):
+                    db: Session = Depends(get_db),
+                    superuser: User = Depends(get_current_superuser)):
     """
     ```json
     Args:
@@ -71,7 +74,8 @@ def cocktail_create(_cocktail_create: cocktail_schema.CocktailCreate,
 @router.put("/{cocktail_id}", status_code=status.HTTP_200_OK, response_model=None)
 def cocktail_update(cocktail_id: int,
                     _cocktail_update: cocktail_schema.CocktailUpdate,
-                    db: Session = Depends(get_db)):
+                    db: Session = Depends(get_db),
+                    superuser: User = Depends(get_current_superuser)):
     cocktail = cocktail_crud.get_cocktail(db=db, cocktail_id=cocktail_id)
     if not cocktail:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
@@ -82,7 +86,9 @@ def cocktail_update(cocktail_id: int,
 
 
 @router.delete("/{cocktail_id}", status_code=status.HTTP_204_NO_CONTENT)
-def cocktail_delete(cocktail_id: int, db: Session = Depends(get_db)):
+def cocktail_delete(cocktail_id: int,
+                    db: Session = Depends(get_db),
+                    superuser: User = Depends(get_current_superuser)):
     if not cocktail_crud.get_cocktail(db=db, cocktail_id=cocktail_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Cocktail입니다.")
     cocktail_crud.delete_cocktail(db=db, cocktail_id=cocktail_id)

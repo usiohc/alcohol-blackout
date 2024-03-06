@@ -4,7 +4,9 @@ from starlette import status
 
 from api.cocktail import cocktail_crud
 from api.spirit import spirit_schema, spirit_crud
+from api.user.user_router import get_current_superuser
 from db.database import get_db
+from models import User
 
 router = APIRouter(
     prefix="/api/spirits",
@@ -28,7 +30,8 @@ def spirit_detail(spirit_id: int, db: Session = Depends(get_db)):
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=None)
 def spirit_create(_spirit_create: spirit_schema.SpiritCreate,
-                  db: Session = Depends(get_db)):
+                  db: Session = Depends(get_db),
+                  superuser: User = Depends(get_current_superuser)):
     """
     ```json
     Args:
@@ -57,7 +60,8 @@ def spirit_create(_spirit_create: spirit_schema.SpiritCreate,
 @router.put("/{spirit_id}", status_code=status.HTTP_200_OK, response_model=None)
 def spirit_update(spirit_id: int,
                   _spirit_update: spirit_schema.SpiritUpdate,
-                  db: Session = Depends(get_db)):
+                  db: Session = Depends(get_db),
+                  superuser: User = Depends(get_current_superuser)):
     spirit = spirit_crud.get_spirit(db=db, spirit_id=spirit_id)
     if not spirit:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Spirit입니다.")
@@ -73,7 +77,9 @@ def spirit_update(spirit_id: int,
 
 
 @router.delete("/{spirit_id}", status_code=status.HTTP_204_NO_CONTENT)
-def spirit_delete(spirit_id: int, db: Session = Depends(get_db)):
+def spirit_delete(spirit_id: int,
+                  db: Session = Depends(get_db),
+                  superuser: User = Depends(get_current_superuser)):
     if not spirit_crud.get_spirit(db=db, spirit_id=spirit_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Spirit입니다.")
     spirit_crud.delete_spirit(db=db, spirit_id=spirit_id)
