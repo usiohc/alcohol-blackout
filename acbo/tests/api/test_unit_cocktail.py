@@ -1,5 +1,5 @@
 from api.cocktail import cocktail_crud, cocktail_schema
-from enums import Skill
+from core.enums import Skill
 
 
 def test_cocktail_list(db, cocktail):
@@ -23,7 +23,9 @@ def test_cocktail_detail(db, cocktail):
 
 def test_cocktail_spirit_material(db, recipe):
     spirit_total, spirit_list = cocktail_crud.get_cocktail_spirit_list(db, recipe.id)
-    material_total, material_list = cocktail_crud.get_cocktail_material_list(db, recipe.id)
+    material_total, material_list = cocktail_crud.get_cocktail_material_list(
+        db, recipe.id
+    )
 
     assert spirit_total == 1
     assert spirit_list[0].id == recipe.spirits[0].id
@@ -49,9 +51,11 @@ def test_cocktail_create(db):
         "name": "Test Cocktail",
         "name_ko": "테스트 칵테일",
         "skill": Skill.Shake,
-        "abv": 5
+        "abv": 5,
     }
-    created_cocktail = cocktail_crud.create_cocktail(db, cocktail_schema.CocktailCreate(**cocktail_data))
+    created_cocktail = cocktail_crud.create_cocktail(
+        db, cocktail_schema.CocktailCreate(**cocktail_data)
+    )
     assert created_cocktail.id == 1
     assert created_cocktail.name == cocktail_data["name"].replace(" ", "_")
     assert created_cocktail.name_ko == cocktail_data["name_ko"].replace(" ", "_")
@@ -64,10 +68,12 @@ def test_cocktail_update(db, cocktail):
         "name": "Updated Cocktail",
         "name_ko": "업데이트된 칵테일",
         "skill": Skill.Float,
-        "abv": 20
+        "abv": 20,
     }
     cocktail = cocktail_crud.get_cocktail(db, cocktail.id)
-    updated_cocktail = cocktail_crud.update_cocktail(db, cocktail, cocktail_schema.CocktailUpdate(**updated_data))
+    updated_cocktail = cocktail_crud.update_cocktail(
+        db, cocktail, cocktail_schema.CocktailUpdate(**updated_data)
+    )
     assert updated_cocktail.id == cocktail.id
     assert updated_cocktail.name == updated_data["name"].replace(" ", "_")
     assert updated_cocktail.name_ko == updated_data["name_ko"].replace(" ", "_")
@@ -82,7 +88,8 @@ def test_cocktail_delete(db, cocktail):
 
 def test_cocktail_by_spirit_material(db, recipe):
     s, m = list(map(lambda x: x.type.value, recipe.spirits)), list(
-        map(lambda x: [x.type.value, x.name], recipe.materials))
+        map(lambda x: [x.type.value, x.name], recipe.materials)
+    )
     tests = [
         (s, m),
         (s, []),
@@ -90,7 +97,9 @@ def test_cocktail_by_spirit_material(db, recipe):
         ([], []),
     ]
     for spirits, materials in tests:
-        total, cocktail_list = cocktail_crud.get_cocktail_by_spirit_material(db, spirits, materials)
+        total, cocktail_list = cocktail_crud.get_cocktail_by_spirit_material(
+            db, spirits, materials
+        )
         assert total == 1
         assert cocktail_list[0].id == recipe.id
         assert cocktail_list[0].name == recipe.name.replace("_", " ")

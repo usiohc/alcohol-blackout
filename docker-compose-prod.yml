@@ -37,7 +37,7 @@ services:
 
   
   frontend:
-    image: nginx:1.24-bullseye
+    image: nginx:1.24-alpine
     restart: always
     depends_on:
       - backend

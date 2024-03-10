@@ -25,7 +25,10 @@ def create_bookmark(db: Session, user: User, cocktail_id: int):
 
 
 def delete_bookmark(db: Session, user: User, cocktail_id: int):
-    db_bookmark = db.query(Bookmark).filter(Bookmark.user_id == user.id,
-                                            Bookmark.cocktail_id == cocktail_id).first()
+    db_bookmark = (
+        db.query(Bookmark)
+        .filter(Bookmark.user_id == user.id, Bookmark.cocktail_id == cocktail_id)
+        .first()
+    )
     db.delete(db_bookmark)
     db.commit()

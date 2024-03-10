@@ -4,7 +4,7 @@ from starlette import status
 
 from api.cocktail import cocktail_crud, cocktail_schema
 from api.user.user_router import get_current_superuser
-from cloud_storage import upload_blob_from_memory
+from core.cloud_storage import upload_blob_from_memory
 from db.database import get_db
 from models import User
 

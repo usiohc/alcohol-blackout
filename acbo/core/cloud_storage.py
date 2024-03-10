@@ -2,15 +2,19 @@ from json import dumps
 
 from google.cloud import storage
 
-from models import datetime_date
+from core.config import datetime_date
 
 storage_client = storage.Client()
 
 
-def upload_blob_from_memory(bucket_name: str, data: dict, destination_blob_name: str,
-                            _storage_client=storage_client):
+def upload_blob_from_memory(
+    bucket_name: str,
+    data: dict,
+    destination_blob_name: str,
+    _storage_client=storage_client,
+):
     # Dict를 JSON 문자열로 변환, loads()로 유니코드 이스케이프 decode
-    json_data = dumps(data, ensure_ascii=False).encode('utf-8').decode('utf-8')
+    json_data = dumps(data, ensure_ascii=False).encode("utf-8").decode("utf-8")
     try:
         bucket = _storage_client.bucket(bucket_name)
         bucket_path = f"{datetime_date()}"
@@ -26,7 +30,7 @@ def upload_blob_from_memory(bucket_name: str, data: dict, destination_blob_name:
 
 def get_blobs_count(bucket_name, bucket_path, _storage_client):
     # Note: Client.list_blobs requires at least package version 1.17.0.
-    blobs = _storage_client.list_blobs(bucket_name, prefix=bucket_path+"/")
+    blobs = _storage_client.list_blobs(bucket_name, prefix=bucket_path + "/")
 
     # Note: The call returns a response only when the iterator is consumed.
     for _ in blobs:

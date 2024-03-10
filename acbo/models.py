@@ -1,20 +1,14 @@
-from datetime import datetime as dt, timedelta, timezone
-
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime, event
+from core.config import datetime
+from core.enums import MaterialType, Skill, SpiritType, Unit
+from db.database import (Base, after_select_listener, before_insert_listener,
+                         before_update_listener)
+from sqlalchemy import (Column, DateTime, Enum, ForeignKey, Integer, String,
+                        event)
 from sqlalchemy.orm import relationship
-
-from db.database import Base, after_select_listener, before_insert_listener, before_update_listener
-from enums import Skill, Unit, SpiritType, MaterialType
-
-KST = timezone(timedelta(hours=9))
-def datetime():
-    return dt.now(KST)
-def datetime_date():
-    return dt.now(KST).date()
 
 
 class Spirit(Base):
-    __tablename__ = 'spirit'
+    __tablename__ = "spirit"
 
     id = Column(Integer, primary_key=True)
     type = Column(Enum(SpiritType), nullable=False)
@@ -22,11 +16,11 @@ class Spirit(Base):
     name_ko = Column(String(length=50), nullable=True)
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
-    cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
+    cocktail_id = Column(Integer, ForeignKey("cocktail.id"))
 
 
 class Material(Base):
-    __tablename__ = 'material'
+    __tablename__ = "material"
 
     id = Column(Integer, primary_key=True)
     type = Column(Enum(MaterialType), nullable=False)
@@ -34,11 +28,11 @@ class Material(Base):
     name_ko = Column(String(length=50), nullable=False)
     unit = Column(Enum(Unit), nullable=False)
     amount = Column(Integer, nullable=False)
-    cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
+    cocktail_id = Column(Integer, ForeignKey("cocktail.id"))
 
 
 class Cocktail(Base):
-    __tablename__ = 'cocktail'
+    __tablename__ = "cocktail"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(length=50), nullable=False)
@@ -65,7 +59,8 @@ class User(Base):
         2: 관리자
     }
     """
-    __tablename__ = 'user'
+
+    __tablename__ = "user"
 
     id = Column(Integer, primary_key=True)
     username = Column(String(length=20), unique=True, nullable=False)
@@ -79,18 +74,18 @@ class User(Base):
 
 
 class Bookmark(Base):
-    __tablename__ = 'bookmark'
+    __tablename__ = "bookmark"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('user.id'))
-    cocktail_id = Column(Integer, ForeignKey('cocktail.id'))
-
+    user_id = Column(Integer, ForeignKey("user.id"))
+    cocktail_id = Column(Integer, ForeignKey("cocktail.id"))
     created_at = Column(DateTime, default=datetime())
+
     cocktails = relationship("Cocktail", backref="bookmark")
 
 
 # Spirit, Material, Cocktail 테이블에 대한 이벤트 리스너 등록
 for model in [Spirit, Material, Cocktail]:
-    event.listen(model, 'load', after_select_listener)
-    event.listen(model, 'before_insert', before_insert_listener)
-    event.listen(model, 'before_update', before_update_listener)
+    event.listen(model, "load", after_select_listener)
+    event.listen(model, "before_insert", before_insert_listener)
+    event.listen(model, "before_update", before_update_listener)

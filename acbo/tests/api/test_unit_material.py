@@ -1,5 +1,5 @@
 from api.material import material_crud, material_schema
-from enums import MaterialType, Unit
+from core.enums import MaterialType, Unit
 
 
 def test_get_material_list(db, material):
@@ -41,9 +41,11 @@ def test_create_material(db):
         "name_ko": "테스트 리큐어",
         "unit": Unit.ml,
         "amount": 50,
-        "cocktail_id": None
+        "cocktail_id": None,
     }
-    created_material = material_crud.create_material(db, material_schema.MaterialCreate(**material_data))
+    created_material = material_crud.create_material(
+        db, material_schema.MaterialCreate(**material_data)
+    )
     assert created_material.id == 1
     assert created_material.type == material_data["type"]
     assert created_material.name == material_data["name"].replace(" ", "_")
@@ -63,10 +65,12 @@ def test_update_material(db, material):
         "name_ko": "업데이트된 시럽",
         "unit": Unit.ml,
         "amount": 60,
-        "cocktail_id": None
+        "cocktail_id": None,
     }
     material = material_crud.get_material(db, material.id)
-    updated_material = material_crud.update_material(db, material, material_schema.MaterialUpdate(**material_data))
+    updated_material = material_crud.update_material(
+        db, material, material_schema.MaterialUpdate(**material_data)
+    )
     assert updated_material.id == material.id
     assert updated_material.type == material_data["type"]
     assert updated_material.name == material_data["name"].replace(" ", "_")

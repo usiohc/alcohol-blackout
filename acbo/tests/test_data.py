@@ -1,10 +1,10 @@
-from enums import SpiritType, Skill, MaterialType, Unit
+from core.enums import MaterialType, Skill, SpiritType, Unit
 
 cocktail_data = {
     "name": "Test Cocktail",
     "name_ko": "테스트 칵테일",
     "skill": Skill.Stir,
-    "abv": 10
+    "abv": 10,
 }
 
 spirit_data = {
@@ -13,7 +13,7 @@ spirit_data = {
     "name_ko": "테스트 기주",
     "unit": Unit.ml,
     "amount": 50,
-    "cocktail_id": None
+    "cocktail_id": None,
 }
 
 material_data = {
@@ -22,17 +22,14 @@ material_data = {
     "name_ko": "테스트 재료",
     "unit": Unit.ml,
     "amount": 50,
-    "cocktail_id": None
+    "cocktail_id": None,
 }
 
 user_data = {
     "username": "test_user",
     "email": "test_user@test.com",
     "password": "test_password",
-    "passwordCheck": "test_password"
+    "passwordCheck": "test_password",
 }
 
-email_token_data = {
-    "token": "test_token",
-    "email": user_data["email"]
-}
+email_token_data = {"token": "test_token", "email": user_data["email"]}

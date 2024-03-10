@@ -1,12 +1,12 @@
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session, sessionmaker
 
 import models
-from api.cocktail import cocktail_schema, cocktail_crud
-from api.material import material_schema, material_crud
-from api.spirit import spirit_schema, spirit_crud
+from api.cocktail import cocktail_crud, cocktail_schema
+from api.material import material_crud, material_schema
+from api.spirit import spirit_crud, spirit_schema
 from api.user import user_crud, user_schema
 from db.database import Base, get_db
 from main import app
@@ -22,7 +22,9 @@ SQLALCHEMY_DATABASE_URL = "sqlite://" + DB_URL
 # if not os.path.isfile(SQLALCHEMY_DATABASE_URL):
 #     SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
-TestSessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine, class_=TestSession)
+TestSessionLocal = sessionmaker(
+    autocommit=False, autoflush=True, bind=engine, class_=TestSession
+)
 
 
 @pytest.fixture(scope="session")
@@ -53,14 +55,17 @@ def client(db):
 @pytest.fixture(scope="function")
 def cocktail(db):
     from tests.test_data import cocktail_data
-    _cocktail = cocktail_crud.create_cocktail(db, cocktail_schema.CocktailCreate(**cocktail_data))
+
+    _cocktail = cocktail_crud.create_cocktail(
+        db, cocktail_schema.CocktailCreate(**cocktail_data)
+    )
 
     cocktail_data = {
         "id": _cocktail.id,
         "name": _cocktail.name,
         "name_ko": _cocktail.name_ko,
         "skill": _cocktail.skill,
-        "abv": _cocktail.abv
+        "abv": _cocktail.abv,
     }
     return models.Cocktail(**cocktail_data)
 
@@ -68,6 +73,7 @@ def cocktail(db):
 @pytest.fixture(scope="function")
 def spirit(db):
     from tests.test_data import spirit_data
+
     _spirit = spirit_crud.create_spirit(db, spirit_schema.SpiritCreate(**spirit_data))
 
     spirit_data = {
@@ -77,7 +83,7 @@ def spirit(db):
         "name_ko": _spirit.name_ko,
         "unit": _spirit.unit,
         "amount": _spirit.amount,
-        "cocktail_id": _spirit.cocktail_id
+        "cocktail_id": _spirit.cocktail_id,
     }
     return models.Spirit(**spirit_data)
 
@@ -85,7 +91,10 @@ def spirit(db):
 @pytest.fixture(scope="function")
 def material(db):
     from tests.test_data import material_data
-    _material = material_crud.create_material(db, material_schema.MaterialCreate(**material_data))
+
+    _material = material_crud.create_material(
+        db, material_schema.MaterialCreate(**material_data)
+    )
 
     material_data = {
         "id": _material.id,
@@ -94,20 +103,25 @@ def material(db):
         "name_ko": _material.name_ko,
         "unit": _material.unit,
         "amount": _material.amount,
-        "cocktail_id": _material.cocktail_id
+        "cocktail_id": _material.cocktail_id,
     }
     return models.Material(**material_data)
 
 
 @pytest.fixture(scope="function")
 def recipe(db):
-    from tests.test_data import cocktail_data, spirit_data, material_data
-    _cocktail = cocktail_crud.create_cocktail(db, cocktail_schema.CocktailCreate(**cocktail_data))
+    from tests.test_data import cocktail_data, material_data, spirit_data
+
+    _cocktail = cocktail_crud.create_cocktail(
+        db, cocktail_schema.CocktailCreate(**cocktail_data)
+    )
     spirit_data["cocktail_id"] = _cocktail.id
     material_data["cocktail_id"] = _cocktail.id
 
     _spirit = spirit_crud.create_spirit(db, spirit_schema.SpiritCreate(**spirit_data))
-    _material = material_crud.create_material(db, material_schema.MaterialCreate(**material_data))
+    _material = material_crud.create_material(
+        db, material_schema.MaterialCreate(**material_data)
+    )
 
     recipe_data = {
         "id": _cocktail.id,
@@ -124,7 +138,7 @@ def recipe(db):
                 "name_ko": _spirit.name_ko,
                 "unit": _spirit.unit,
                 "amount": _spirit.amount,
-                "cocktail_id": _spirit.cocktail_id
+                "cocktail_id": _spirit.cocktail_id,
             }
         ],
         "materials": [
@@ -135,10 +149,9 @@ def recipe(db):
                 "name_ko": _material.name_ko,
                 "unit": _material.unit,
                 "amount": _material.amount,
-                "cocktail_id": _material.cocktail_id
+                "cocktail_id": _material.cocktail_id,
             }
-        ]
-
+        ],
     }
 
     return cocktail_schema.CocktailDetail(**recipe_data)
@@ -147,6 +160,7 @@ def recipe(db):
 @pytest.fixture(scope="function")
 def user(db):
     from tests.test_data import user_data
+
     _user = user_crud.create_user(db, user_schema.UserCreate(**user_data))
     return _user
 
@@ -166,5 +180,6 @@ def superuser(db, user):
 @pytest.fixture(scope="function")
 def bookmark(db, verified_user, cocktail):
     from api.bookmark import bookmark_crud
+
     _bookmark = bookmark_crud.create_bookmark(db, verified_user, cocktail.id)
     return _bookmark

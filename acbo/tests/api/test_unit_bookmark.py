@@ -1,4 +1,6 @@
 from api.bookmark import bookmark_crud
+
+
 def test_get_bookmarked_cocktail_list(db, verified_user, cocktail, bookmark):
     total, cocktail_list = bookmark_crud.get_bookmarked_cocktail_list(verified_user)
     assert total == 1
@@ -8,11 +10,12 @@ def test_get_bookmarked_cocktail_list(db, verified_user, cocktail, bookmark):
     assert cocktail_list[0].skill == cocktail.skill
     assert cocktail_list[0].abv == cocktail.abv
 
+
 def test_get_is_bookmarked(db, verified_user, cocktail, bookmark):
     is_bookmarked = bookmark_crud.get_is_bookmarked(verified_user, cocktail.id)
     assert is_bookmarked is True
 
-    is_not_bookmarked = bookmark_crud.get_is_bookmarked(verified_user, cocktail.id+1)
+    is_not_bookmarked = bookmark_crud.get_is_bookmarked(verified_user, cocktail.id + 1)
     assert is_not_bookmarked is False
 
 

@@ -32,9 +32,9 @@ def create_cocktail(db: Session, cocktail: cocktail_schema.CocktailCreate):
     return db_cocktail
 
 
-def update_cocktail(db: Session,
-                    db_cocktail: Cocktail,
-                    cocktail_update: cocktail_schema.CocktailUpdate):
+def update_cocktail(
+    db: Session, db_cocktail: Cocktail, cocktail_update: cocktail_schema.CocktailUpdate
+):
     for key, value in cocktail_update.model_dump().items():
         setattr(db_cocktail, key, value)
     db.add(db_cocktail)
@@ -49,17 +49,19 @@ def delete_cocktail(db: Session, cocktail_id: int):
     db.commit()
 
 
-def get_cocktail_by_spirit_material(db: Session,
-                                    spirits: list,
-                                    materials: list):
+def get_cocktail_by_spirit_material(db: Session, spirits: list, materials: list):
     if spirits:
         # 서브 쿼리:
-        subquery = db.query(Spirit.cocktail_id) \
-            .filter(Spirit.type.in_(spirits)) \
-            .group_by(Spirit.cocktail_id) \
+        subquery = (
+            db.query(Spirit.cocktail_id)
+            .filter(Spirit.type.in_(spirits))
+            .group_by(Spirit.cocktail_id)
             .having(func.count(Spirit.type) == len(spirits))
+        )
         # 메인 쿼리:
-        spirits = db.query(Spirit.cocktail_id).filter(Spirit.cocktail_id.in_(subquery)).all()
+        spirits = (
+            db.query(Spirit.cocktail_id).filter(Spirit.cocktail_id.in_(subquery)).all()
+        )
     else:  # spirits 이 없으면 모든 cocktail_id 반환
         spirits = db.query(Cocktail.id).all()
 
@@ -68,13 +70,24 @@ def get_cocktail_by_spirit_material(db: Session,
 
     if materials:
         for material_type, material_name in materials:
-            _materials = db.query(Material.cocktail_id) \
-                .filter(and_(Material.type == material_type, Material.name == material_name)) \
-                .group_by(Material.cocktail_id).all()
-            result = result & set(map(lambda x: x[0], _materials))  # _materials = [(1,), ...]
+            _materials = (
+                db.query(Material.cocktail_id)
+                .filter(
+                    and_(Material.type == material_type, Material.name == material_name)
+                )
+                .group_by(Material.cocktail_id)
+                .all()
+            )
+            result = result & set(
+                map(lambda x: x[0], _materials)
+            )  # _materials = [(1,), ...]
 
-    cocktails = db.query(Cocktail).filter(Cocktail.id.in_(result))\
-                  .order_by(Cocktail.name_ko.asc(),Cocktail.name.asc()).all()
+    cocktails = (
+        db.query(Cocktail)
+        .filter(Cocktail.id.in_(result))
+        .order_by(Cocktail.name_ko.asc(), Cocktail.name.asc())
+        .all()
+    )
 
     return len(cocktails), cocktails
 

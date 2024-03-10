@@ -1,5 +1,5 @@
 from api.spirit import spirit_crud, spirit_schema
-from enums import Unit, SpiritType
+from core.enums import SpiritType, Unit
 
 
 def test_get_spirit_list(db, spirit):
@@ -44,9 +44,11 @@ def test_create_spirit(db):
         "name_ko": "테스트 위스키",
         "unit": Unit.ml,
         "amount": 50,
-        "cocktail_id": None
+        "cocktail_id": None,
     }
-    created_spirit = spirit_crud.create_spirit(db, spirit_schema.SpiritCreate(**spirit_data))
+    created_spirit = spirit_crud.create_spirit(
+        db, spirit_schema.SpiritCreate(**spirit_data)
+    )
 
     assert created_spirit.id == 1
     assert created_spirit.type == spirit_data["type"]
@@ -68,10 +70,12 @@ def test_update_spirit(db, spirit):
         "name_ko": "업데이트된 Gin",
         "unit": Unit.ml,
         "amount": 60,
-        "cocktail_id": None
+        "cocktail_id": None,
     }
     spirit = spirit_crud.get_spirit(db, spirit.id)
-    updated_spirit = spirit_crud.update_spirit(db, spirit, spirit_schema.SpiritUpdate(**spirit_data))
+    updated_spirit = spirit_crud.update_spirit(
+        db, spirit, spirit_schema.SpiritUpdate(**spirit_data)
+    )
     assert updated_spirit.id == spirit.id
     assert updated_spirit.type == spirit_data["type"]
     assert updated_spirit.name == spirit_data["name"].replace(" ", "_")

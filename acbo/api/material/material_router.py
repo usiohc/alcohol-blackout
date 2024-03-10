@@ -5,8 +5,8 @@ from starlette import status
 from api.cocktail import cocktail_crud
 from api.material import material_crud, material_schema
 from api.user.user_router import get_current_superuser
+from core.enums import SpiritType
 from db.database import get_db
-from enums import SpiritType
 from models import User
 
 router = APIRouter(

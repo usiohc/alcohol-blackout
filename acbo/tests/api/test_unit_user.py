@@ -1,4 +1,4 @@
-from api.user import user_schema, user_crud
+from api.user import user_crud, user_schema
 from api.user.user_crud import pwd_context
 from api.user.user_router import make_access_token
 
@@ -8,7 +8,7 @@ def test_create_user(db):
         "username": "test_user",
         "email": "test_user@test.com",
         "password": "test_password",
-        "passwordCheck": "test_password"
+        "passwordCheck": "test_password",
     }
     created_user = user_crud.create_user(db, user_schema.UserCreate(**user_data))
     assert created_user.username == user_data["username"]
@@ -56,10 +56,11 @@ def test_delete_user(db, user):
 
 def test_send_email_token_and_verify_email(db, user):
     import asyncio
-    from api.user.email.email import send_email_token, _verify_email, fm
+
+    from api.user.email.email import _verify_email, fm, send_email_token
 
     access_token = make_access_token(user.email, 1)
-    fm.config.SUPPRESS_SEND = 1 # 실제 전송 X
+    fm.config.SUPPRESS_SEND = 1  # 실제 전송 X
     send_email = asyncio.run(send_email_token(access_token, user.email))
     assert send_email is not None
 
