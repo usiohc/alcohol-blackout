@@ -51,8 +51,15 @@ def test_spirit_create(client, superuser):
         json=spirit_data,
         headers={"Authorization": f"Bearer {_superuser['access_token']}"},
     )
+    res = response.json()
     assert response.status_code == 201
-    assert response.json() is None
+    assert res["id"] is not None
+    assert res["type"] == spirit_data["type"]
+    assert res["name"] == spirit_data["name"].replace(" ", "_")
+    assert res["name_ko"] == spirit_data["name_ko"].replace(" ", "_")
+    assert res["unit"] == spirit_data["unit"]
+    assert res["amount"] == spirit_data["amount"]
+    assert res["cocktail_id"] == spirit_data["cocktail_id"]
 
 
 def test_spirit_update(client, spirit, superuser):
@@ -78,8 +85,15 @@ def test_spirit_update(client, spirit, superuser):
         json=updated_data,
         headers={"Authorization": f"Bearer {_superuser['access_token']}"},
     )
+    res = response.json()
     assert response.status_code == 200
-    assert response.json() is None
+    assert res["id"] is not None
+    assert res["type"] == updated_data["type"]
+    assert res["name"] == updated_data["name"].replace(" ", "_")
+    assert res["name_ko"] == updated_data["name_ko"].replace(" ", "_")
+    assert res["unit"] == updated_data["unit"]
+    assert res["amount"] == updated_data["amount"]
+    assert res["cocktail_id"] == updated_data["cocktail_id"]
 
 
 def test_spirit_delete(client, spirit, superuser):

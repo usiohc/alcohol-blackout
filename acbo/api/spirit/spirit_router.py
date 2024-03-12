@@ -30,7 +30,9 @@ def spirit_detail(spirit_id: int, db: Session = Depends(get_db)):
     return spirit
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=None)
+@router.post(
+    "", status_code=status.HTTP_201_CREATED, response_model=spirit_schema.Spirit
+)
 def spirit_create(
     _spirit_create: spirit_schema.SpiritCreate,
     db: Session = Depends(get_db),
@@ -48,7 +50,15 @@ def spirit_create(
             "cocktail_id": Optional[int]
         }
     Returns:
-        None
+        {
+            "id": 1,
+            "type": "Vodka",
+            "name": "str",
+            "name_ko": "str",
+            "unit": "ml",
+            "amount": 1,
+            "cocktail_id": null
+        }
     ```
     """
     if not _spirit_create.cocktail_id:
@@ -62,15 +72,13 @@ def spirit_create(
             detail="cocktail_id에 해당하는 칵테일를 찾을 수 없습니다.",
         )
 
-    if not spirit_crud.create_spirit(db=db, spirit=_spirit_create):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Spirit을 생성할 수 없습니다.",
-        )
-    return None
+    created_spirit = spirit_crud.create_spirit(db=db, spirit=_spirit_create)
+    return created_spirit
 
 
-@router.put("/{spirit_id}", status_code=status.HTTP_200_OK, response_model=None)
+@router.put(
+    "/{spirit_id}", status_code=status.HTTP_200_OK, response_model=spirit_schema.Spirit
+)
 def spirit_update(
     spirit_id: int,
     _spirit_update: spirit_schema.SpiritUpdate,
@@ -80,7 +88,8 @@ def spirit_update(
     spirit = spirit_crud.get_spirit(db=db, spirit_id=spirit_id)
     if not spirit:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="존재하지 않는 Spirit입니다."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="존재하지 않는 Spirit입니다.",
         )
 
     if not _spirit_update.cocktail_id:
@@ -94,14 +103,10 @@ def spirit_update(
             detail="cocktail_id에 해당하는 칵테일를 찾을 수 없습니다.",
         )
 
-    if not spirit_crud.update_spirit(
+    updated_spirit = spirit_crud.update_spirit(
         db=db, db_spirit=spirit, spirit_update=_spirit_update
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Spirit을 수정할 수 없습니다.",
-        )
-    return None
+    )
+    return updated_spirit
 
 
 @router.delete("/{spirit_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -77,8 +77,13 @@ def test_cocktail_create(client, superuser):
         json=cocktail_data,
         headers={"Authorization": f"Bearer {_superuser['access_token']}"},
     )
+    res = response.json()
     assert response.status_code == 201
-    assert response.json() is None
+    assert res["id"] is not None
+    assert res["name"] == cocktail_data["name"].replace(" ", "_")
+    assert res["name_ko"] == cocktail_data["name_ko"].replace(" ", "_")
+    assert res["skill"] == cocktail_data["skill"]
+    assert res["abv"] == cocktail_data["abv"]
 
 
 def test_cocktail_update(client, cocktail, superuser):
@@ -102,8 +107,13 @@ def test_cocktail_update(client, cocktail, superuser):
         json=updated_data,
         headers={"Authorization": f"Bearer {_superuser['access_token']}"},
     )
+    res = response.json()
     assert response.status_code == 200
-    assert response.json() is None
+    assert res["id"] == cocktail.id
+    assert res["name"] == updated_data["name"].replace(" ", "_")
+    assert res["name_ko"] == updated_data["name_ko"].replace(" ", "_")
+    assert res["skill"] == updated_data["skill"]
+    assert res["abv"] == updated_data["abv"]
 
 
 def test_cocktail_delete(client, cocktail, superuser):

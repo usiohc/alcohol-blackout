@@ -50,8 +50,15 @@ def test_material_create(client, superuser):
         json=material_data,
         headers={"Authorization": f"Bearer {_superuser['access_token']}"},
     )
+    res = response.json()
     assert response.status_code == 201
-    assert response.json() is None
+    assert res["id"] is not None
+    assert res["type"] == material_data["type"]
+    assert res["name"] == material_data["name"].replace(" ", "_")
+    assert res["name_ko"] == material_data["name_ko"].replace(" ", "_")
+    assert res["unit"] == material_data["unit"]
+    assert res["amount"] == material_data["amount"]
+    assert res["cocktail_id"] == material_data["cocktail_id"]
 
 
 def test_material_update(client, material, superuser):
@@ -77,8 +84,15 @@ def test_material_update(client, material, superuser):
         json=updated_data,
         headers={"Authorization": f"Bearer {_superuser['access_token']}"},
     )
+    res = response.json()
     assert response.status_code == 200
-    assert response.json() is None
+    assert res["id"] is not None
+    assert res["type"] == updated_data["type"]
+    assert res["name"] == updated_data["name"].replace(" ", "_")
+    assert res["name_ko"] == updated_data["name_ko"].replace(" ", "_")
+    assert res["unit"] == updated_data["unit"]
+    assert res["amount"] == updated_data["amount"]
+    assert res["cocktail_id"] == updated_data["cocktail_id"]
 
 
 def test_material_delete(client, material, superuser):
